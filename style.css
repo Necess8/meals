@@ -11,9 +11,10 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(to bottom, #f6be00, whitesmoke);
+    background: linear-gradient(to top, #ffc800, #fff5b4);
 }
 a{
+    color: #170e13;
     text-decoration: none;
 }
 ul {
@@ -21,7 +22,6 @@ ul {
 }
 .active {
     color: #170e13;
-    text-decoration: none;
     font-weight: bold;
 }
 /* for index html */
@@ -93,8 +93,8 @@ header {
 .si-btn {
     padding: 8px 15px;
     border-radius: 30px;
-    color: #170e13;
-    border: 3px solid #171717;
+    color: #faf3cd;
+    background: #5b2f15;
     width: 80px;
     height: 40px;
     font-size: 15px;
@@ -107,6 +107,7 @@ header {
     cursor: pointer;
     display: none;
     font-size: larger;
+    z-index: 2;
 }
 .searchBar{
     display: flex;
@@ -117,8 +118,8 @@ header {
     margin-bottom: 75px;
 }
 .searchBar input{
-    width: 400px;
-    height: 37px;
+    width: 450px;
+    height: 45px;
     padding: 11px;
     font-size: 18px;
     border: 2px solid #170e13;
@@ -127,23 +128,25 @@ header {
 }
 .searchBar button{
     width: 60px;
-    height: 37px;
+    height: 45px;
     background-color: #170e13;
     color: white;
     border: none;
     font-size: 18px;
     border-top-right-radius: 25px;
     border-bottom-right-radius: 25px;
-     margin-left: -33px;
+    margin-left: -33px;
 }
 /* mobile device */
-@media only screen and (max-width:850px){
+@media only screen and (max-width:920px){
     .menuBtn {
         display: block;
+        color: #170e13;
+        text-decoration: none;
     }
     .navbar {
         padding: 0;
-        background-color: #5a3d2b;
+        background: #fff5b4;
     }
     .logo {
         position: absolute;
@@ -155,7 +158,6 @@ header {
         width: 100%;
         height: 100vh;
         justify-content: center; 
-        background: #5a3d2b;
         margin-top: -900px;
         transition: all 0.5s ease;
     }
@@ -165,5 +167,12 @@ header {
     }
     .nav-link li {
         margin: 30px auto;
+    }
+    .header-content {
+        justify-content: center;
+        margin-left: 30px;
+    }
+    .searchBar {
+        margin: 30px 0 75px;
     }
 }

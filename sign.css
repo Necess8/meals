@@ -203,14 +203,13 @@ form {
 
 /* for index html */
  a{
+    color: #170e13;
     text-decoration: none;
 }
 ul {
     list-style: none;
 }
 .active {
-    color: #170e13;
-    text-decoration: none;
     font-weight: bold;
 }
 /* navbar */
@@ -224,6 +223,7 @@ ul {
     padding: 20px;
     background: transparent;
     color: #170e13;
+    z-index: 4;
 }
 .nav-link {
     display: flex;
@@ -233,7 +233,6 @@ ul {
 }
 .nav-link li {
     margin: 0 30px;
-    text-decoration: none;
 }
 .logo {
     margin-top: 10px;
@@ -250,17 +249,6 @@ ul {
     margin-top: 50px;
     margin-bottom: 60px;
 } */
-/*register button */
-.rg-btn {
-    padding: 8px 15px;
-    background: #170e13;
-    border-radius: 30px;
-    color: whitesmoke;
-    width: 80px;
-    height: 40px;
-    font-size: 15px;
-    text-decoration: none;
-}
 .menuBtn { 
     position: absolute;
     top: 30px;
@@ -268,7 +256,7 @@ ul {
     width: 40px;
     cursor: pointer;
     display: none;
-    font-size: large;
+    font-size: larger;
 }
 /* mobile device - nav bar and menu */
 @media only screen and (max-width:850px){
@@ -279,7 +267,7 @@ ul {
     }
     .navbar {
         padding: 0;
-        background-color: transparent;
+        
     }
     .logo {
         position: absolute;
@@ -292,13 +280,13 @@ ul {
         width: 100%;
         height: 100vh;
         justify-content: center; 
-        background: transparent;
         margin-top: -900px;
         transition: all 0.5s ease;
     }
     .mobile-menu  {
         margin-top: 0px;
         border-bottom-right-radius: 30%;
+        background-color: #f6be00;
     }
     .nav-link li {
         margin: 30px auto;
