@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("ss", $username, $password);
 
         if ($stmt->execute()) {
-            header("Location: index.html");
+            header("Location: uprofile.html");
             exit();
         } else {
             echo "Registration error: " . $stmt->error;

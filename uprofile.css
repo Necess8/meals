@@ -49,35 +49,6 @@ ul {
 .logo {
     margin-top: 10px;
 }
-header {
-    width: 100vw;
-    height: 100vh;
-    background-position: bottom;
-    background-size: cover;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.header-content {
-    margin-bottom: 150px;
-    color: #170e13;
-    text-align: center;
-}
-.header-content h2 {
-    font-size: 4vmin;
-}
-.line {
-    width: 150px;
-    height: 4px;
-    background: #5a3d2b;
-    margin: 10px auto;
-    border-radius: 5px;
-}
-.header-content h1 {
-    font-size: 7vmin;
-    margin-top: 50px;
-    margin-bottom: 60px;
-}
 /* log out button */
 .logout-btn {
     padding: 8px 15px;
@@ -87,17 +58,6 @@ header {
     width: 80px;
     height: 40px;
     font-size: 20px;
-}
-/* user sign in button */
-
-.si-btn {
-    padding: 8px 15px;
-    border-radius: 30px;
-    color: #170e13;
-    border: 3px solid #171717;
-    width: 80px;
-    height: 40px;
-    font-size: 15px;
 }
 .menuBtn {
     position: absolute;
