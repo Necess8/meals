@@ -7,12 +7,16 @@
 }
 body {
     font-family: 'Poppins', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    margin: 0;
     background: linear-gradient(to top, #ffc800, #fff5b4);
 }
+.hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
 a{
     color: #170e13;
     text-decoration: none;
@@ -137,6 +141,190 @@ header {
     border-bottom-right-radius: 25px;
     margin-left: -33px;
 }
+/* image slider */
+section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: transparent;
+}
+.swiper {
+    width: 50%;
+    padding: 40px 0;
+  }
+  
+.swiper-wrapper {
+    display: flex;
+  }
+  
+.swiper-slide {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+.swiper-pagination {
+    position: relative;
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  
+/* start of card content */
+.card .image {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+}
+.card .image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.card {
+    position: relative;
+    background: #faf3cd;
+    border: 3px solid #170e13;
+    border-radius: 20px;
+    width: 400px;
+}
+.card .card-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    padding: 30px;
+}
+.card .name-category {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 10px;
+    color: #170e13;
+}
+.name-category .name {
+    font-size: 20px;
+    font-weight: 600;
+}
+.name-category .category {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.card .rating {
+    display: flex;
+    align-items: center;
+    margin-top: 18px;
+}
+.card .rating i {
+    font-size: 18px;
+    color: #5b2f15;
+    margin: 0 2px;
+}
+.card .button {
+    display: flex;
+    justify-content: space-between;
+    width: 40%;
+    margin-top: 20px;
+}
+.card .button button {
+    background: #170e13;
+    border: none;
+    outline: none;
+    color: #fff5b4;
+    font-weight: 600;
+    padding: 8px 22px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: .3s;
+}
+.card .button button:hover {
+    background: #5b2f15;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* mobile device */
 @media only screen and (max-width:920px){
     .menuBtn {
