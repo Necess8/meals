@@ -7,6 +7,11 @@
 }
 body {
     font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #f6be00, whitesmoke);
 }
 a{
     text-decoration: none;
@@ -15,10 +20,11 @@ ul {
     list-style: none;
 }
 .active {
-    color: #fff;
+    color: #170e13;
     text-decoration: none;
+    font-weight: bold;
 }
-/* navbar */
+/* for index html */
 .navbar {
     position: absolute;
     top: 0;
@@ -27,14 +33,15 @@ ul {
     width: 100%;
     justify-content: space-between;
     padding: 20px;
-    background: #5a3d2b;
-    color: whitesmoke;
+    background: transparent;
+    color: #170e13;
 }
 .nav-link {
     display: flex;
     gap: 20px;
     padding: 10px;
     align-items: center;
+    font-weight: 500;
 }
 .nav-link li {
     margin: 0 30px;
@@ -45,7 +52,6 @@ ul {
 header {
     width: 100vw;
     height: 100vh;
-    background-color: #f6be00;
     background-position: bottom;
     background-size: cover;
     display: flex;
@@ -54,7 +60,7 @@ header {
 }
 .header-content {
     margin-bottom: 150px;
-    color: whitesmoke;
+    color: #170e13;
     text-align: center;
 }
 .header-content h2 {
@@ -73,26 +79,22 @@ header {
     margin-bottom: 60px;
 }
 /* register button */
-button {
-    background-color: transparent;
-    border: none;
-}
-.btn {
+.register-btn {
     padding: 8px 15px;
-    background: #104908;
+    background: #170e13;
     border-radius: 30px;
-    color: #fff;
+    color: whitesmoke;
     width: 80px;
     height: 40px;
     font-size: 20px;
 }
 /* user sign in button */
 
-.ctn-active {
+.si-btn {
     padding: 8px 15px;
-    background: #104908;
     border-radius: 30px;
-    color: whitesmoke;
+    color: #170e13;
+    border: 3px solid #171717;
     width: 80px;
     height: 40px;
     font-size: 15px;
@@ -104,7 +106,7 @@ button {
     width: 40px;
     cursor: pointer;
     display: none;
-    font-size: large;
+    font-size: larger;
 }
 .searchBar{
     display: flex;
@@ -119,14 +121,14 @@ button {
     height: 37px;
     padding: 11px;
     font-size: 18px;
-    border: 2px solid #fff;
+    border: 2px solid #170e13;
     outline: none;
     border-radius: 33px;
 }
 .searchBar button{
     width: 60px;
     height: 37px;
-    background-color: #104908;
+    background-color: #170e13;
     color: white;
     border: none;
     font-size: 18px;
