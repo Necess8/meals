@@ -1,42 +1,55 @@
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: signin.html');
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meal Finder</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
-    rel="stylesheet"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meal Finder</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
 </head>
 <body>
-    <!-- Navbar -->
-     <nav class="navbar">
-        <h1 class="logo"><i class="ri-bowl-line"></i><span></span>Meal Finder</h1>
-        <ul class="nav-link">
-            <li class="active"><a href="index.html"></a>Home</li>
-            <li class="active"><a href="#"></a>Meals</li>
-            <li class="active"><a href="#"></a>Cuisines</li>
-            <li class="active"><a href="#"></a>About Us</li>
-            <li class="active"><a href="signin.html" class="si-btn">Sign In</a></li>
-        </ul>
-        <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
-     </nav>
-    <header>
-        <div class="header-content">
-            <div class="searchBar">
-                <input type="text" placeholder="Search Here" id="searchInput">
-                <button id="searchBtn"><i class="ri-search-line"></i></button>
-            </div>
-            <div>
-                <h2>Taste of International Cuisines.</h2>
-                <div class="line"></div>
-                <h1 class="typing-text">Crave it. Find it. Eat happy.</h1>
-            </div>
-            <div>
-                <a href="signin.html" class="register-btn">Register</a></button>
-            </div>
-        </div>
-    </header>
-    <script src="script.js"></script>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
+    <ul class="nav-link">
+      <li class="active"><a href="index.html">Home</a></li>
+      <li class="active"><a href="#">Meals</a></li>
+      <li class="active"><a href="#">Cuisines</a></li>
+      <li class="active"><a href="#">About Us</a></li>
+      <li class="active"><a href="signin.html" class="si-btn">Sign In</a></li>
+    </ul>
+    <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
+  </nav>
+
+  <!-- Header -->
+  <header>
+    <div class="header-content">
+      <div class="searchBar">
+        <input type="text" placeholder="Search Here" id="searchInput" />
+        <button id="searchBtn"><i class="ri-search-line"></i></button>
+      </div>
+      <h2>Taste of International Cuisines.</h2>
+      <div class="line"></div>
+      <h1>Crave it. Find it. Eat happy.</h1>
+    </div>
+  </header>
+
+  <!-- Search Results -->
+  <main id="mealResults" style="padding: 30px;"></main>
+
+  <!-- Meal Details Popup -->
+  <div id="mealDetailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; overflow:auto; z-index:9999; padding:20px;">
+    <button onclick="closeModal()" style="float:right; font-size:20px;">&times;</button>
+    <div id="mealDetailContent"></div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
