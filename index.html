@@ -11,10 +11,9 @@ if (!isset($_SESSION['user_id'])) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Meal Finder</title>
-  <link rel="stylesheet" href="style.css"/>
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"/>
-
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <body>
   <!-- Navbar -->
   <nav class="navbar">
@@ -76,10 +75,11 @@ if (!isset($_SESSION['user_id'])) {
              </div>
           </div>
         </div>
+        <!-- food 2 -->
         <div class="swiper-slide card">
           <div class="card-content">
             <div class="image">
-              <img src="foods/img1.jpg" alt="">
+              <img src="foods/img2.jpg" alt="">
             </div>
             <!-- food name and category -->
             <div class="name-category">
@@ -101,10 +101,11 @@ if (!isset($_SESSION['user_id'])) {
              </div>
           </div>
         </div>
+        <!-- food 3 -->
         <div class="swiper-slide card">
           <div class="card-content">
             <div class="image">
-              <img src="foods/img1.jpg" alt="">
+              <img src="foods/img3.jpg" alt="">
             </div>
             <!-- food name and category -->
             <div class="name-category">
@@ -122,15 +123,41 @@ if (!isset($_SESSION['user_id'])) {
             <!-- button for recipe and ingredient -->
              <div class="button">
               <button class="recipe">Recipe</button>
+              <button class="ingredient">Ingredient</button>
+             </div>
+          </div>
+        </div>
+        <!-- food 4 -->
+        <div class="swiper-slide card">
+          <div class="card-content">
+            <div class="image">
+              <img src="foods/img2.jpg" alt="">
+            </div>
+            <!-- food name and category -->
+            <div class="name-category">
+              <span class="name">Chicken Biryani</span>
+              <span class="category">Chicken</span>
+            </div>
+            <!-- food rating -->
+            <div class="rating">
+              <i class="ri-poker-hearts-fill"></i>
+              <i class="ri-poker-hearts-fill"></i>
+              <i class="ri-poker-hearts-fill"></i>
+              <i class="ri-poker-hearts-fill"></i>
+              <i class="ri-poker-hearts-line"></i>
+            </div>
+            <!-- button for recipe and ingredient -->
+             <div class="button">
+              <button class="recipe">See Recipe</button>
               <button class="ingredient">Ingredient</button>
              </div>
           </div>
         </div>
     </div>
         <!-- swiper buttons -->
-  <div class="swiper-button-next"></div>
+ <div class="swiper-button-next"></div>
   <div class="swiper-button-prev"></div>
-  <div class="swiper-pagination"></div>
+  <div class="swiper-pagination my-pagination"></div>
   </section>
 
   <!-- Search Results -->
@@ -142,7 +169,8 @@ if (!isset($_SESSION['user_id'])) {
     <div id="mealDetailContent"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="script.js"></script>
+</head>
 </body>
 </html>

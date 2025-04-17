@@ -4,6 +4,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    outline: #170e13;
 }
 body {
     font-family: 'Poppins', sans-serif;
@@ -146,31 +147,50 @@ section {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    background: transparent;
+    height: 1000px;
+    right: 0;
+    max-width: 100vw;
+    position: relative;
 }
 .swiper {
-    width: 50%;
-    padding: 40px 0;
-  }
-  
+    width: 100%;
+    max-width: 950px; /* You can tweak this */
+    /* overflow: hidden; */
+    padding: 2rem 0;
+}
 .swiper-wrapper {
     display: flex;
-  }
-  
-.swiper-slide {
     width: 100%;
-    display: flex;
+    height: 100%;
+  }
+.swiper-slide {
+    flex-shrink: 0;
+    width: 800px;   /* width of card */
+    margin-right: 40px;
     justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
   }
 
-.swiper-pagination {
-    position: relative;
-    margin-top: 20px;
-    text-align: center;
+.swiper-slide img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
-
-  
+.my-pagination .swiper-pagination-bullet {
+    background-color: #5b2f15;
+    height: 7px;
+    width: 20px;
+    border-radius: 20px;
+  }
+.swiper-button-next,
+.swiper-button-prev {
+    color: #170e13 !important;
+    border-radius: 50%;
+    padding: 10px;
+    font-weight: bold;
+}
 /* start of card content */
 .card .image {
     width: 300px;
@@ -182,13 +202,24 @@ section {
     height: 100%;
     object-fit: cover;
     border-radius: 50%;
+    border: 4px solid #faf3cd ;
+}
+.card::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    clip-path: circle(55% at 0 0);
+    background: #5b2f15;
+    border-top-left-radius: 14px;
 }
 .card {
     position: relative;
     background: #faf3cd;
-    border: 3px solid #170e13;
+    border: 2px solid #5b2f15;
     border-radius: 20px;
-    width: 400px;
+    width: 100%;
+    max-width: 460px;
 }
 .card .card-content {
     position: relative;
@@ -225,8 +256,8 @@ section {
 }
 .card .button {
     display: flex;
-    justify-content: space-between;
-    width: 40%;
+    justify-content: space-around;
+    width: 94%;
     margin-top: 20px;
 }
 .card .button button {
@@ -235,9 +266,9 @@ section {
     outline: none;
     color: #fff5b4;
     font-weight: 600;
-    padding: 8px 22px;
+    padding: 10px 22px;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
     transition: .3s;
 }

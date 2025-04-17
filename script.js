@@ -23,20 +23,25 @@ if (registerBtn && loginBtn && container) {
 
 
 // card slider initialize
-var swiper = new Swiper(".mySwiper", {
-  slidesPerView: 1,
-  spaceBetween: 30,
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("DOM fully loaded");
+
+const swiper = new Swiper(".mySwiper", {
+  slidesPerView: 3,
+  spaceBetween: 10,
+  slidesPerGroup: 1,
   loop: true,
   pagination: {
-    el: ".swiper-pagination",
+    el: ".my-pagination",
     clickable: true,
-  },
-  navigation: {
-    nextEl: ".swiper-button-next",
-    prevEl: ".swiper-button-prev",
-  },
-});
-
+    },
+    navigation: {
+      nextEl: ".swiper-button-next",
+      prevEl: ".swiper-button-prev",
+    },
+    });
+  });
+console.log("JS is running!");
 // Meal search functionality
 const searchBtn = document.getElementById('searchBtn');
 const searchInput = document.getElementById('searchInput');
