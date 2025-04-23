@@ -20,11 +20,38 @@ if (registerBtn && loginBtn && container) {
     container.classList.remove("active");
   });
 }
+// header 
+const listInfo = document.querySelector('.list-info');
+const listImgs = document.querySelectorAll('.list-img .item');
+const nextBtn = document.querySelector('.next-btn');
+const prevBtn = document.querySelector('.prev-btn');
+
+let index = 0;
+
+nextBtn.addEventListener('click', () => {
+  // Remove current active image
+  listImgs[index].classList.remove('active');
+
+  // Update index
+  index = (index + 1) % listImgs.length;
+
+  // Add active to new image
+  listImgs[index].classList.add('active');
+
+  // Move listInfo (if you have multiple sections for text)
+  listInfo.style.transform = `translateY(${index * -20}%)`;
+});
+
+prevBtn.addEventListener('click', () => {
+  listImgs[index].classList.remove('active');
+  index = (index - 1 + listImgs.length) % listImgs.length;
+  listImgs[index].classList.add('active');
+  listInfo.style.transform = `translateY(${index * -20}%)`;
+});
 
 
 // card slider initialize
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM fully loaded");
 
 const swiper = new Swiper(".mySwiper", {
   slidesPerView: 3,
@@ -41,7 +68,6 @@ const swiper = new Swiper(".mySwiper", {
     },
     });
   });
-console.log("JS is running!");
 // Meal search functionality
 const searchBtn = document.getElementById('searchBtn');
 const searchInput = document.getElementById('searchInput');

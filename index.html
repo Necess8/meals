@@ -12,19 +12,29 @@ if (!isset($_SESSION['user_id'])) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Meal Finder</title>
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <body>
   <!-- Navbar -->
   <nav class="navbar">
-    <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
+    <div class="navbar-left">
+      <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
+    </div>
+    <div class="navbar-center">
     <ul class="nav-link">
       <li class="active"><a href="index.html">Home</a></li>
-      <li class="active"><a href="#">Meals</a></li>
       <li class="active"><a href="#">Cuisines</a></li>
-      <li class="active"><a href="#">About Us</a></li>
-      <li class="active"><a href="signin.html" class="si-btn">Sign In</a></li>
+      <li class="active"><a href="about.html">About Us</a></li>
     </ul>
+    </div>
+    <div class="navbar-right">
+            <div class="searchBar">
+        <input type="text" placeholder="Search Here" id="searchInput" />
+        <button id="searchBtn"><i class="ri-search-line"></i></button>
+        <li class="active"><a href="signin.html" class="si-btn">Sign In</a></li>
+      </div>
+    </div>
     <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
   </nav>
 
@@ -33,13 +43,62 @@ if (!isset($_SESSION['user_id'])) {
     <!-- Header -->
     <header>
       <div class="header-content">
-        <div class="searchBar">
-          <input type="text" placeholder="Search Here" id="searchInput" />
-          <button id="searchBtn"><i class="ri-search-line"></i></button>
+
+        <div class="list-img">
+          <div class="item active">
+            <img src="foods/no_bg_food1.png" alt="">
+          </div>
+          <div class="item">
+            <img src="foods/food2.png" alt="">
+          </div>
+          <div class="item">
+            <img src="foods/foof3.png" alt="">
+          </div>
+          <div class="item">
+            <img src="foods/foof4.png" alt="">
+          </div>
+          <div class="item">
+            <img src="foods/foof5.png" alt="">
+          </div>
         </div>
-        <h2>Taste of International Cuisines.</h2>
-        <div class="line"></div>
-        <h1>Crave it. Find it. Eat happy.</h1>
+
+        <div class="box-info">
+          <div class="list-info">
+            <div class="info">
+              <h2>Crave it. Find it. Eat happy.</h2>
+              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias, consectetur molestias. Eligendi atque similique iusto magnam quaerat assumenda, quos quod non sit consectetur dolore unde rerum aliquam cupiditate sint? Dicta!</p>
+              <a href="#" class="btn">View More</a>
+            </div>
+
+            <div class="info">
+              <h2>Italian Cuisine</h2>
+              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias, consectetur molestias. Eligendi atque similique iusto magnam quaerat assumenda, quos quod non sit consectetur dolore unde rerum aliquam cupiditate sint? Dicta!</p>
+              <a href="#" class="btn">View More</a>
+            </div>
+
+            <div class="info">
+              <h2>American Cuisine</h2>
+              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias, consectetur molestias. Eligendi atque similique iusto magnam quaerat assumenda, quos quod non sit consectetur dolore unde rerum aliquam cupiditate sint? Dicta!</p>
+              <a href="#" class="btn">View More</a>
+            </div>
+
+            <div class="info">
+              <h2>Indian Cuisine</h2>
+              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias, consectetur molestias. Eligendi atque similique iusto magnam quaerat assumenda, quos quod non sit consectetur dolore unde rerum aliquam cupiditate sint? Dicta!</p>
+              <a href="#" class="btn">View More</a>
+            </div>
+
+            <div class="info">
+              <h2>Asian Cuisine</h2>
+              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias, consectetur molestias. Eligendi atque similique iusto magnam quaerat assumenda, quos quod non sit consectetur dolore unde rerum aliquam cupiditate sint? Dicta!</p>
+              <a href="#" class="btn">View More</a>
+            </div>
+          </div>
+        </div>
+        <div class="navigation">
+            <span class="prev-btn"><i class='bx bx-chevron-left'></i></span>
+            <span class="next-btn"><i class='bx bx-chevron-right' ></i></span>
+        </div>
       </div>
     </header>
   </div>
@@ -171,6 +230,9 @@ if (!isset($_SESSION['user_id'])) {
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="script.js"></script>
+  <footer>
+    <p>All Rights Reserved. | April 2025</p>
+  </footer>
 </head>
 </body>
 </html>

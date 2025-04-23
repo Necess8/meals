@@ -1,0 +1,32 @@
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: signin.html');
+    exit();
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About MealFinder</title>
+  <link rel="stylesheet" href="uprofile.css"/>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
+    <ul class="nav-link">
+      <li class="active"><a href="index.html">Home</a></li>
+      <li class="active"><a href="#">Meals</a></li>
+      <li class="active"><a href="#">Cuisines</a></li>
+      <li class="active"><a href="#">About Us</a></li>
+      <!-- <li class="active"><a href="signin.html" class="logout-btn">Log Out</a></li> -->
+    </ul>
+    <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
+  </nav>
+  <script src="script.js"></script>
+</body>
+</html>
