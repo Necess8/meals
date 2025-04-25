@@ -5,7 +5,7 @@ ini_set('display_errors', 1);
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'You must be logged in to rate meals.']);
+    echo json_encode(["error" => "You must be logged in to rate meals."]);
     exit();
 }
 
@@ -16,36 +16,51 @@ $pass = '';
 $conn = new mysqli($host, $user, $pass, $db);
 
 if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Connection failed: ' . $conn->connect_error]);
+    echo json_encode(["error" => "Connection failed: " . $conn->connect_error]);
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user_id'];
     $meal_id = $_POST['meal_id'] ?? '';
-    $rating = $_POST['rating'] ?? '';
+    $rating = (int)($_POST['rating'] ?? 0);
     
-    if (empty($meal_id) || !is_numeric($rating) || $rating < 1 || $rating > 5) {
-        echo json_encode(['success' => false, 'message' => 'Invalid meal ID or rating.']);
+    if (empty($meal_id)) {
+        echo json_encode(["error" => "Meal ID is required."]);
+        exit();
+    }
+    
+    if ($rating < 1 || $rating > 5) {
+        echo json_encode(["error" => "Rating must be between 1 and 5."]);
         exit();
     }
     
     // Check if user has already rated this meal
-    $check = $conn->prepare("SELECT id, rating FROM ratings WHERE user_id = ? AND meal_id = ?");
+    $check = $conn->prepare("SELECT id FROM ratings WHERE user_id = ? AND meal_id = ?");
     $check->bind_param("is", $user_id, $meal_id);
     $check->execute();
-    $result = $check->get_result();
+    $check->store_result();
     
-    if ($result->num_rows > 0) {
+    if ($check->num_rows > 0) {
         // Update existing rating
-        $row = $result->fetch_assoc();
-        $stmt = $conn->prepare("UPDATE ratings SET rating = ?, updated_at = NOW() WHERE id = ?");
-        $stmt->bind_param("ii", $rating, $row['id']);
+        $stmt = $conn->prepare("UPDATE ratings SET rating = ?, updated_at = NOW() WHERE user_id = ? AND meal_id = ?");
+        $stmt->bind_param("iis", $rating, $user_id, $meal_id);
         
         if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Rating updated successfully!', 'previous_rating' => $row['rating']]);
+            // Calculate new average rating
+            $avgStmt = $conn->prepare("SELECT AVG(rating) as avg_rating FROM ratings WHERE meal_id = ?");
+            $avgStmt->bind_param("s", $meal_id);
+            $avgStmt->execute();
+            $avgResult = $avgStmt->get_result();
+            $avgRow = $avgResult->fetch_assoc();
+            $avgRating = round($avgRow['avg_rating'], 1);
+            
+            echo json_encode([
+                "success" => "Rating updated successfully!",
+                "avgRating" => $avgRating
+            ]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Error updating rating: ' . $stmt->error]);
+            echo json_encode(["error" => "Error updating rating: " . $stmt->error]);
         }
     } else {
         // Insert new rating
@@ -53,9 +68,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("isi", $user_id, $meal_id, $rating);
         
         if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Meal rated successfully!']);
+            // Calculate new average rating
+            $avgStmt = $conn->prepare("SELECT AVG(rating) as avg_rating FROM ratings WHERE meal_id = ?");
+            $avgStmt->bind_param("s", $meal_id);
+            $avgStmt->execute();
+            $avgResult = $avgStmt->get_result();
+            $avgRow = $avgResult->fetch_assoc();
+            $avgRating = round($avgRow['avg_rating'], 1);
+            
+            echo json_encode([
+                "success" => "Meal rated successfully!",
+                "avgRating" => $avgRating
+            ]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Error rating meal: ' . $stmt->error]);
+            echo json_encode(["error" => "Error rating meal: " . $stmt->error]);
         }
     }
 }

@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    header('Location: signin.html');
+    header('Location: index.html');
     exit();
 }
 ?>
@@ -23,17 +23,18 @@ if (!isset($_SESSION['user_id'])) {
     </div>
     <div class="navbar-center">
     <ul class="nav-link">
-      <li><a href="index.html">Home</a></li>
+      <li><a href="userpage.html">Home</a></li>
       <li class="active"><a href="cuisines.html">Cuisines</a></li>
       <li><a href="about.html">About Us</a></li>
+      <li><a href="profile.html">My Profile</a></li>
     </ul>
     </div>
     <div class="navbar-right">
       <div class="searchBar">
-        <input type="text" placeholder="Search meals, cuisines, ingredients..." id="cuisineSearchInput" />
-        <button id="cuisineSearchBtn"><i class="ri-search-line"></i></button>
+        <input type="text" placeholder="Search meals or cuisines..." id="searchInput" />
+        <button id="searchBtn"><i class="ri-search-line"></i></button>
+        <li><a href="logout.php" class="si-btn">Sign Out</a></li>
       </div>
-      <a href="logout.php" class="logout-btn">Log Out</a>
     </div>
     <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
   </nav>

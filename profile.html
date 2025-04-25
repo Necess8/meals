@@ -1,0 +1,103 @@
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: index.html');
+    exit();
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Profile - Meal Finder</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-left">
+      <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
+    </div>
+    <div class="navbar-center">
+    <ul class="nav-link">
+      <li><a href="userpage.html">Home</a></li>
+      <li><a href="cuisines.html">Cuisines</a></li>
+      <li><a href="about.html">About Us</a></li>
+      <li class="active"><a href="profile.html">My Profile</a></li>
+    </ul>
+    </div>
+    <div class="navbar-right">
+      <div class="searchBar">
+        <input type="text" placeholder="Search meals or cuisines..." id="searchInput" />
+        <button id="searchBtn"><i class="ri-search-line"></i></button>
+        <li><a href="logout.php" class="si-btn">Sign Out</a></li>
+      </div>
+    </div>
+    <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
+  </nav>
+
+  <!-- Profile Header -->
+  <div class="profile-header">
+    <div class="container">
+      <h1>My Profile</h1>
+      <p>Welcome, <span id="username"><?php echo $_SESSION['username']; ?></span>!</p>
+    </div>
+  </div>
+
+  <!-- Favorite Meals Section -->
+  <section id="favorite-meals-section">
+    <div class="container">
+      <h2>My Favorite Meals <i class="ri-heart-fill"></i></h2>
+      <p class="section-description">You can save up to 10 favorite meals for quick access.</p>
+      <div id="favorite-meals" class="meals-grid">
+        <!-- Favorite meals will be dynamically inserted here -->
+        <div class="meal-card skeleton-loader"></div>
+        <div class="meal-card skeleton-loader"></div>
+        <div class="meal-card skeleton-loader"></div>
+      </div>
+      <div id="no-favorites" style="display: none;">
+        <p>You haven't added any favorite meals yet. Browse meals and click the heart icon to add them to your favorites.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rated Meals Section -->
+  <section id="rated-meals-section">
+    <div class="container">
+      <h2>My Rated Meals <i class="ri-poker-hearts-fill"></i></h2>
+      <p class="section-description">Meals you've rated from 1 to 5 hearts.</p>
+      <div id="rated-meals" class="meals-grid">
+        <!-- Rated meals will be dynamically inserted here -->
+        <div class="meal-card skeleton-loader"></div>
+        <div class="meal-card skeleton-loader"></div>
+        <div class="meal-card skeleton-loader"></div>
+      </div>
+      <div id="no-ratings" style="display: none;">
+        <p>You haven't rated any meals yet. Browse meals and click the hearts to rate them.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Meal Details Modal -->
+  <div id="profileMealDetailModal" class="modal">
+    <div class="modal-content">
+      <span class="close-profile-modal">&times;</span>
+      <div id="profileMealDetailContent">
+        <!-- Meal details will be dynamically inserted here -->
+      </div>
+      <div class="modal-actions">
+        <button id="profile-remove-favorite" class="btn"><i class="ri-heart-fill"></i> Remove from Favorites</button>
+        <button id="profile-watch-video" class="btn"><i class="ri-youtube-line"></i> Watch Video</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="profile.js"></script>
+  <footer>
+    <p>All Rights Reserved. | April 2025</p>
+  </footer>
+</body>
+</html>

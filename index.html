@@ -1,196 +1,78 @@
-<?php
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: signin.html');
-    exit();
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Meal Finder</title>
-  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
-  <link rel="stylesheet" href="style.css"/>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Finder</title>
+    <link rel="stylesheet" href="sign.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="navbar-left">
-      <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
-    </div>
-    <div class="navbar-center">
-    <ul class="nav-link">
-      <li class="active"><a href="index.html">Home</a></li>
-      <li><a href="cuisines.html">Cuisines</a></li>
-      <li><a href="about.html">About Us</a></li>
-    </ul>
-    </div>
-    <div class="navbar-right">
-      <div class="searchBar">
-        <input type="text" placeholder="Search meals, cuisines, ingredients..." id="searchInput" />
-        <button id="searchBtn"><i class="ri-search-line"></i></button>
-      </div>
-      <a href="logout.php" class="logout-btn">Log Out</a>
-    </div>
-    <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
-  </nav>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <h1 class="logo"><i class="ri-bowl-line"></i><span></span>Meal Finder</h1>
+        <ul class="nav-link">
+            <li class="active"><a href="index.html">Home</a></li>
+            <li class="active"><a href="about.html">About Us</a></li>
+        </ul>
+        <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
+    </nav>
 
-  <!-- for centering header -->
-  <div class="hero"> 
-    <!-- Header -->
-    <header>
-      <div class="header-content">
-
-        <div class="list-img">
-          <div class="item active">
-            <img src="foods/no_bg_food1.png" alt="Food image">
-          </div>
-          <div class="item">
-            <img src="foods/food2.png" alt="Food image">
-          </div>
-          <div class="item">
-            <img src="foods/foof3.png" alt="Food image">
-          </div>
-          <div class="item">
-            <img src="foods/foof4.png" alt="Food image">
-          </div>
-          <div class="item">
-            <img src="foods/foof5.png" alt="Food image">
-          </div>
-        </div>
-
-        <div class="box-info">
-          <div class="list-info">
-            <div class="info">
-              <h2>Crave it. Find it. Eat happy.</h2>
-              <p>Discover delicious recipes from around the world. Search by name, ingredients, or browse by cuisine to find your next favorite meal.</p>
-              <a href="#featured-meals" class="btn">Explore Meals</a>
-            </div>
-
-            <div class="info">
-              <h2>Italian Cuisine</h2>
-              <p>From pasta to pizza, explore the rich flavors of Italian cooking with our collection of authentic recipes.</p>
-              <a href="cuisines.html?area=Italian" class="btn">View Italian Meals</a>
-            </div>
-
-            <div class="info">
-              <h2>American Cuisine</h2>
-              <p>Discover classic American comfort food recipes from burgers to apple pie that everyone will love.</p>
-              <a href="cuisines.html?area=American" class="btn">View American Meals</a>
-            </div>
-
-            <div class="info">
-              <h2>Indian Cuisine</h2>
-              <p>Explore the vibrant spices and flavors of Indian cuisine with our collection of traditional recipes.</p>
-              <a href="cuisines.html?area=Indian" class="btn">View Indian Meals</a>
-            </div>
-
-            <div class="info">
-              <h2>Asian Cuisine</h2>
-              <p>From Chinese to Japanese, Thai to Vietnamese, discover the diverse flavors of Asian cooking.</p>
-              <a href="cuisines.html?area=Chinese" class="btn">View Asian Meals</a>
-            </div>
-          </div>
-        </div>
-        <div class="navigation">
-            <span class="prev-btn"><i class='bx bx-chevron-left'></i></span>
-            <span class="next-btn"><i class='bx bx-chevron-right' ></i></span>
-        </div>
-      </div>
-    </header>
-  </div>
-  
-  <!-- Featured Meals Section -->
-  <section id="featured-meals">
-    <div class="swiper mySwiper container">
-      <h1>Featured Meals<i class="ri-poker-hearts-line"></i></h1>
-
-      <div class="swiper-wrapper content" id="featured-meals-container">
-        <!-- Meal cards will be dynamically inserted here -->
-        <div class="swiper-slide card">
-          <div class="card-content">
-            <div class="image skeleton-loader"></div>
-            <div class="name-category">
-              <span class="name skeleton-loader"></span>
-              <span class="category skeleton-loader"></span>
-            </div>
-            <div class="rating skeleton-loader"></div>
-            <div class="button">
-              <button class="recipe skeleton-loader"></button>
-              <button class="ingredient skeleton-loader"></button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- swiper buttons -->
-      <div class="swiper-button-next"></div>
-      <div class="swiper-button-prev"></div>
-      <div class="swiper-pagination my-pagination"></div>
-    </div>
-  </section>
-
-  <!-- All Meals Section -->
-  <section id="all-meals-section">
+    <!-- Sign In/Register Container -->
     <div class="container">
-      <h1>All Meals<i class="ri-restaurant-line"></i></h1>
-      <div id="all-meals" class="meals-grid">
-        <!-- Meals will be dynamically inserted here -->
-        <div class="meal-card skeleton-loader"></div>
-        <div class="meal-card skeleton-loader"></div>
-        <div class="meal-card skeleton-loader"></div>
-        <div class="meal-card skeleton-loader"></div>
-        <div class="meal-card skeleton-loader"></div>
-        <div class="meal-card skeleton-loader"></div>
-      </div>
-      <div class="pagination-container">
-        <button id="load-more" class="btn">Load More</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Search Results -->
-  <section id="search-results-section" style="display: none;">
-    <div class="container">
-      <h1>Search Results<i class="ri-search-line"></i></h1>
-      <div id="search-results" class="meals-grid">
-        <!-- Search results will be dynamically inserted here -->
-      </div>
-      <div id="no-results" style="display: none;">
-        <p>No meals found. Try a different search term.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Meal Details Modal -->
-  <div id="mealDetailModal" class="modal">
-    <div class="modal-content">
-      <span class="close-modal">&times;</span>
-      <div id="mealDetailContent">
-        <!-- Meal details will be dynamically inserted here -->
-        <div class="meal-detail-skeleton">
-          <div class="meal-image skeleton-loader"></div>
-          <div class="meal-title skeleton-loader"></div>
-          <div class="meal-category skeleton-loader"></div>
-          <div class="meal-ingredients skeleton-loader"></div>
-          <div class="meal-instructions skeleton-loader"></div>
+        <!-- Login Form -->
+        <div class="form-box login">
+            <form action="login.php" method="POST">
+                <h2>Sign In to your Account</h2>
+                <div class="line"></div>
+                <div class="input-box">
+                    <input type="text" name="username" placeholder="Username" required 
+                           maxlength="25" pattern="^\S{1,25}$" title="No spaces. Max 25 characters.">
+                    <i class="ri-user-3-fill"></i>
+                </div>
+                <div class="input-box">
+                    <input type="password" name="password" placeholder="Password" required>
+                    <i class="ri-lock-password-line"></i>
+                </div>
+                <button type="submit" class="login-btn">Sign In</button>
+            </form>
         </div>
-      </div>
-      <div class="modal-actions">
-        <button id="add-to-favorites" class="btn"><i class="ri-heart-line"></i> Add to Favorites</button>
-        <button id="watch-video" class="btn"><i class="ri-youtube-line"></i> Watch Video</button>
-      </div>
-    </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script src="script.js"></script>
-  <footer>
-    <p>All Rights Reserved. | April 2025</p>
-  </footer>
+        <!-- Register Form -->
+        <div class="form-box register">
+            <form action="register.php" method="POST">
+                <h2>Create an Account</h2>
+                <div class="line"></div>
+                <div class="input-box">
+                    <input type="text" name="username" placeholder="Username" required 
+                           maxlength="25" pattern="^\S{1,25}$" title="No spaces. Max 25 characters.">
+                    <i class="ri-user-3-fill"></i>
+                </div>
+                <div class="input-box">
+                    <input type="password" name="password" placeholder="Password" required>
+                    <i class="ri-lock-password-line"></i>
+                </div>
+                <button type="submit" class="btn reg-btn">Register</button>
+            </form>
+        </div>
+
+        <!-- Toggle Panels -->
+        <div class="toggle-box">
+            <div class="toggle-panel toggle-left">
+                <h1>Welcome to Meal Finder!</h1>
+                <p>Don't have an account?</p>
+                <button class="btn registerr-btn">Register</button>
+            </div>
+        </div>
+        <div class="toggle-box">
+            <div class="toggle-panel toggle-right">
+                <h1>Welcome back!</h1>
+                <p>Already have an account?</p>
+                <button class="btn loginn-btn">Sign In</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

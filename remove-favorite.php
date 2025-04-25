@@ -29,7 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
     
-    // Delete the favorite
     $stmt = $conn->prepare("DELETE FROM favorites WHERE user_id = ? AND meal_id = ?");
     $stmt->bind_param("is", $user_id, $meal_id);
     
