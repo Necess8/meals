@@ -968,6 +968,8 @@ footer {
   }
 }
 
+/* Add these styles to style.css */
+
 /* Rating container for both average and user ratings */
 .rating-container {
   display: flex;
