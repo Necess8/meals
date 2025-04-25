@@ -104,6 +104,20 @@ document.addEventListener("DOMContentLoaded", () => {
   if (area && document.getElementById("cuisine-meals-section")) {
     loadCuisineMeals(area)
   }
+
+  // Add this at the end of the existing DOMContentLoaded function:
+
+  // Check for search parameter in URL
+  const urlParams2 = new URLSearchParams(window.location.search)
+  const searchQuery = urlParams2.get("search")
+
+  if (searchQuery && document.getElementById("search-results-section")) {
+    // If we have a search query in the URL, perform the search
+    performSearch(searchQuery)
+
+    // Scroll to search results
+    document.getElementById("search-results-section").scrollIntoView({ behavior: "smooth" })
+  }
 })
 
 // API Functions
@@ -130,13 +144,30 @@ async function fetchMealsByFirstLetter(letter) {
 }
 
 async function fetchMealById(id) {
-  try {
-    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`)
-    const data = await response.json()
-    return data.meals ? data.meals[0] : null
-  } catch (error) {
-    console.error("Error fetching meal details:", error)
+  if (!id) {
+    console.error("Invalid meal ID provided:", id)
     return null
+  }
+
+  try {
+    console.log("Fetching meal from API with ID:", id)
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`)
+
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (!data.meals || data.meals.length === 0) {
+      console.log("No meal found with ID:", id)
+      return null
+    }
+
+    return data.meals[0]
+  } catch (error) {
+    console.error(`Error fetching meal with ID ${id}:`, error)
+    throw error // Rethrow to handle in the calling function
   }
 }
 
@@ -202,44 +233,109 @@ function createFeaturedMealCard(meal) {
   const card = document.createElement("div")
   card.className = "swiper-slide card"
 
-  // Generate 5 stars with random 3-5 filled
-  const filledStars = Math.floor(Math.random() * 3) + 3 // Random number between 3-5
-  let starsHTML = ""
-  for (let i = 1; i <= 5; i++) {
-    if (i <= filledStars) {
-      starsHTML += '<i class="ri-poker-hearts-fill"></i>'
-    } else {
-      starsHTML += '<i class="ri-poker-hearts-line"></i>'
+  // Get user ratings if available
+  getUserRating(meal.idMeal).then((userRating) => {
+    // Generate 5 stars with user rating or random 3-5 filled if no rating
+    const filledStars = userRating || Math.floor(Math.random() * 3) + 3 // Random number between 3-5 if no rating
+    let starsHTML = ""
+    for (let i = 1; i <= 5; i++) {
+      if (i <= filledStars) {
+        starsHTML += '<i class="ri-poker-hearts-fill" data-rating="' + i + '"></i>'
+      } else {
+        starsHTML += '<i class="ri-poker-hearts-line" data-rating="' + i + '"></i>'
+      }
     }
-  }
 
-  card.innerHTML = `
-    <div class="card-content">
-      <div class="image">
-        <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+    card.innerHTML = `
+      <div class="card-content">
+        <div class="image">
+          <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+        </div>
+        <div class="name-category">
+          <span class="name">${meal.strMeal}</span>
+          <span class="category">${meal.strCategory}</span>
+        </div>
+        <div class="rating" data-meal-id="${meal.idMeal}">
+          ${starsHTML}
+        </div>
+        <div class="button">
+          <button class="recipe" data-id="${meal.idMeal}">See Recipe</button>
+          <button class="ingredient" data-id="${meal.idMeal}">Ingredients</button>
+        </div>
       </div>
-      <div class="name-category">
-        <span class="name">${meal.strMeal}</span>
-        <span class="category">${meal.strCategory}</span>
-      </div>
-      <div class="rating">
-        ${starsHTML}
-      </div>
-      <div class="button">
-        <button class="recipe" data-id="${meal.idMeal}">See Recipe</button>
-        <button class="ingredient" data-id="${meal.idMeal}">Ingredients</button>
-      </div>
-    </div>
-  `
+    `
 
-  // Add event listeners
-  const recipeBtn = card.querySelector(".recipe")
-  const ingredientBtn = card.querySelector(".ingredient")
+    // Add event listeners
+    const recipeBtn = card.querySelector(".recipe")
+    const ingredientBtn = card.querySelector(".ingredient")
+    const ratingStars = card.querySelectorAll(".rating i")
 
-  recipeBtn.addEventListener("click", () => showMealDetail(meal.idMeal))
-  ingredientBtn.addEventListener("click", () => showMealDetail(meal.idMeal, "ingredients"))
+    recipeBtn.addEventListener("click", () => showMealDetail(meal.idMeal))
+    ingredientBtn.addEventListener("click", () => showMealDetail(meal.idMeal, "ingredients"))
+
+    // Add rating functionality
+    ratingStars.forEach((star) => {
+      star.addEventListener("click", (e) => {
+        e.stopPropagation()
+        const rating = Number.parseInt(star.getAttribute("data-rating"))
+        const mealId = star.parentElement.getAttribute("data-meal-id")
+        rateMeal(mealId, rating, star.parentElement)
+      })
+    })
+  })
 
   return card
+}
+
+// Get user rating for a meal
+async function getUserRating(mealId) {
+  try {
+    const response = await fetch("get-user-data.php")
+    const data = await response.json()
+
+    if (data.success && data.ratings && data.ratings[mealId]) {
+      return data.ratings[mealId]
+    }
+    return 0
+  } catch (error) {
+    console.error("Error getting user rating:", error)
+    return 0
+  }
+}
+
+// Rate a meal
+async function rateMeal(mealId, rating, ratingElement) {
+  try {
+    const response = await fetch("rate-meal.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `meal_id=${mealId}&rating=${rating}`,
+    })
+
+    const result = await response.json()
+
+    if (result.success) {
+      // Update the stars in the UI
+      const stars = ratingElement.querySelectorAll("i")
+      stars.forEach((star, index) => {
+        if (index < rating) {
+          star.className = "ri-poker-hearts-fill"
+        } else {
+          star.className = "ri-poker-hearts-line"
+        }
+      })
+
+      // Show success message
+      alert(result.message)
+    } else {
+      alert(result.message)
+    }
+  } catch (error) {
+    console.error("Error rating meal:", error)
+    alert("Error rating meal. Please try again.")
+  }
 }
 
 let currentPage = 1
@@ -311,32 +407,49 @@ function createMealCard(meal) {
   card.className = "meal-card"
   card.dataset.id = meal.idMeal
 
-  card.innerHTML = `
-    <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
-    <div class="meal-card-content">
-      <h3>${meal.strMeal}</h3>
-      <p>${meal.strCategory || "Category not available"}</p>
-      <div class="meal-card-actions">
-        <button class="view-recipe" data-id="${meal.idMeal}">View Recipe</button>
-        <button class="view-ingredients" data-id="${meal.idMeal}">Ingredients</button>
+  // Get user rating
+  getUserRating(meal.idMeal).then((userRating) => {
+    let ratingHTML = ""
+    if (userRating > 0) {
+      ratingHTML = '<div class="meal-rating">'
+      for (let i = 1; i <= 5; i++) {
+        if (i <= userRating) {
+          ratingHTML += '<i class="ri-poker-hearts-fill"></i>'
+        } else {
+          ratingHTML += '<i class="ri-poker-hearts-line"></i>'
+        }
+      }
+      ratingHTML += "</div>"
+    }
+
+    card.innerHTML = `
+      <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+      <div class="meal-card-content">
+        <h3>${meal.strMeal}</h3>
+        <p>${meal.strCategory || "Category not available"}</p>
+        ${ratingHTML}
+        <div class="meal-card-actions">
+          <button class="view-recipe" data-id="${meal.idMeal}">View Recipe</button>
+          <button class="view-ingredients" data-id="${meal.idMeal}">Ingredients</button>
+        </div>
       </div>
-    </div>
-  `
+    `
 
-  // Add event listeners
-  card.addEventListener("click", () => showMealDetail(meal.idMeal))
+    // Add event listeners
+    card.addEventListener("click", () => showMealDetail(meal.idMeal))
 
-  const viewRecipeBtn = card.querySelector(".view-recipe")
-  const viewIngredientsBtn = card.querySelector(".view-ingredients")
+    const viewRecipeBtn = card.querySelector(".view-recipe")
+    const viewIngredientsBtn = card.querySelector(".view-ingredients")
 
-  viewRecipeBtn.addEventListener("click", (e) => {
-    e.stopPropagation()
-    showMealDetail(meal.idMeal, "recipe")
-  })
+    viewRecipeBtn.addEventListener("click", (e) => {
+      e.stopPropagation()
+      showMealDetail(meal.idMeal, "recipe")
+    })
 
-  viewIngredientsBtn.addEventListener("click", (e) => {
-    e.stopPropagation()
-    showMealDetail(meal.idMeal, "ingredients")
+    viewIngredientsBtn.addEventListener("click", (e) => {
+      e.stopPropagation()
+      showMealDetail(meal.idMeal, "ingredients")
+    })
   })
 
   return card
@@ -362,11 +475,30 @@ async function showMealDetail(id, activeTab = "recipe") {
   modal.style.display = "block"
 
   try {
+    console.log("Fetching meal with ID:", id)
     const meal = await fetchMealById(id)
+
     if (!meal) {
-      modalContent.innerHTML = "<p>Meal details not found.</p>"
+      console.error("Meal not found for ID:", id)
+      modalContent.innerHTML = "<p>Meal details not found. Please try a different meal.</p>"
       return
     }
+
+    console.log("Meal data retrieved:", meal)
+
+    // Get user data to check if meal is favorited and rated
+    let userData = { favorites: [], ratings: {} }
+    try {
+      const userDataResponse = await fetch("get-user-data.php")
+      userData = await userDataResponse.json()
+      console.log("User data retrieved:", userData)
+    } catch (userDataError) {
+      console.error("Error fetching user data:", userDataError)
+      // Continue with empty user data rather than failing completely
+    }
+
+    const isFavorited = userData.favorites && userData.favorites.includes(meal.idMeal)
+    const userRating = userData.ratings && userData.ratings[meal.idMeal] ? userData.ratings[meal.idMeal] : 0
 
     // Get ingredients and measurements
     const ingredients = []
@@ -390,6 +522,17 @@ async function showMealDetail(id, activeTab = "recipe") {
           <h2>${meal.strMeal}</h2>
           <p>Category: ${meal.strCategory}</p>
           <p>Origin: ${meal.strArea}</p>
+        </div>
+      </div>
+      
+      <div class="rating-container">
+        <p>Your Rating:</p>
+        <div class="rating-stars" data-meal-id="${meal.idMeal}">
+          <i class="ri-poker-hearts-${userRating >= 1 ? "fill" : "line"}" data-rating="1"></i>
+          <i class="ri-poker-hearts-${userRating >= 2 ? "fill" : "line"}" data-rating="2"></i>
+          <i class="ri-poker-hearts-${userRating >= 3 ? "fill" : "line"}" data-rating="3"></i>
+          <i class="ri-poker-hearts-${userRating >= 4 ? "fill" : "line"}" data-rating="4"></i>
+          <i class="ri-poker-hearts-${userRating >= 5 ? "fill" : "line"}" data-rating="5"></i>
         </div>
       </div>
       
@@ -463,14 +606,118 @@ async function showMealDetail(id, activeTab = "recipe") {
     // Set up add to favorites button
     const addToFavoritesBtn = document.getElementById("add-to-favorites")
     if (addToFavoritesBtn) {
+      if (isFavorited) {
+        addToFavoritesBtn.innerHTML = '<i class="ri-heart-fill"></i> Remove from Favorites'
+      } else {
+        addToFavoritesBtn.innerHTML = '<i class="ri-heart-line"></i> Add to Favorites'
+      }
+
       addToFavoritesBtn.dataset.id = meal.idMeal
       addToFavoritesBtn.addEventListener("click", () => {
-        addToFavorites(meal.idMeal)
+        toggleFavorite(meal.idMeal, isFavorited)
       })
     }
+
+    // Set up rating functionality
+    const ratingStars = document.querySelectorAll(".rating-stars i")
+    ratingStars.forEach((star) => {
+      star.addEventListener("click", async () => {
+        const rating = Number.parseInt(star.getAttribute("data-rating"))
+        const mealId = star.parentElement.getAttribute("data-meal-id")
+
+        try {
+          const response = await fetch("rate-meal.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `meal_id=${mealId}&rating=${rating}`,
+          })
+
+          const result = await response.json()
+
+          if (result.success) {
+            // Update the stars
+            ratingStars.forEach((s, index) => {
+              if (index < rating) {
+                s.classList.remove("ri-poker-hearts-line")
+                s.classList.add("ri-poker-hearts-fill")
+              } else {
+                s.classList.remove("ri-poker-hearts-fill")
+                s.classList.add("ri-poker-hearts-line")
+              }
+            })
+
+            alert(result.message)
+          } else {
+            alert(result.message)
+          }
+        } catch (error) {
+          console.error("Error rating meal:", error)
+          alert("Error rating meal. Please try again.")
+        }
+      })
+    })
   } catch (error) {
     console.error("Error showing meal details:", error)
-    modalContent.innerHTML = "<p>Error loading meal details. Please try again.</p>"
+    modalContent.innerHTML = `
+    <div class="error-message">
+      <h3>Error Loading Meal Details</h3>
+      <p>We encountered a problem while loading the meal details. This might be due to:</p>
+      <ul>
+        <li>Network connectivity issues</li>
+        <li>The meal ID may be invalid</li>
+        <li>The API service may be temporarily unavailable</li>
+      </ul>
+      <p>Please try again later or select a different meal.</p>
+    </div>
+  `
+  }
+}
+
+// Toggle favorite status
+async function toggleFavorite(mealId, isCurrentlyFavorited) {
+  try {
+    if (isCurrentlyFavorited) {
+      // Remove from favorites
+      const response = await fetch("remove-favorite.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `meal_id=${mealId}`,
+      })
+
+      const result = await response.text()
+      alert(result)
+
+      // Update button
+      const addToFavoritesBtn = document.getElementById("add-to-favorites")
+      if (addToFavoritesBtn) {
+        addToFavoritesBtn.innerHTML = '<i class="ri-heart-line"></i> Add to Favorites'
+      }
+    } else {
+      // Add to favorites
+      const response = await fetch("add-favorite.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `meal_id=${mealId}`,
+      })
+
+      const result = await response.text()
+      alert(result)
+
+      // Update button
+      const addToFavoritesBtn = document.getElementById("add-to-favorites")
+      if (addToFavoritesBtn) {
+        addToFavoritesBtn.innerHTML = '<i class="ri-heart-fill"></i> Remove from Favorites'
+      }
+    }
+  } catch (error) {
+    console.error("Error toggling favorite:", error)
+    alert("Error updating favorites. Please try again.")
   }
 }
 
@@ -497,20 +744,130 @@ document.addEventListener("click", (e) => {
 })
 
 // Search functionality
-const searchBtn = document.getElementById("searchBtn")
-const searchInput = document.getElementById("searchInput")
+document.addEventListener("DOMContentLoaded", () => {
+  const searchBtn = document.getElementById("searchBtn")
+  const searchInput = document.getElementById("searchInput")
+  const cuisineSearchBtn = document.getElementById("cuisineSearchBtn")
+  const cuisineSearchInput = document.getElementById("cuisineSearchInput")
 
-if (searchBtn && searchInput) {
-  searchBtn.addEventListener("click", performSearch)
-  searchInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      performSearch()
-    }
-  })
-}
+  // Set up search functionality for main search bar
+  if (searchBtn && searchInput) {
+    searchBtn.addEventListener("click", () => {
+      const query = searchInput.value.trim()
+      if (query) {
+        // If we're on the home page, perform search directly
+        if (
+          window.location.pathname.includes("index.html") ||
+          window.location.pathname === "/" ||
+          window.location.pathname.endsWith("/")
+        ) {
+          performSearch(query)
+        } else {
+          // Otherwise, redirect to index.html with search parameter
+          window.location.href = `index.html?search=${encodeURIComponent(query)}`
+        }
+      }
+    })
 
-async function performSearch() {
-  const query = searchInput.value.trim()
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        const query = searchInput.value.trim()
+        if (query) {
+          if (
+            window.location.pathname.includes("index.html") ||
+            window.location.pathname === "/" ||
+            window.location.pathname.endsWith("/")
+          ) {
+            performSearch(query)
+          } else {
+            window.location.href = `index.html?search=${encodeURIComponent(query)}`
+          }
+        }
+      }
+    })
+  }
+
+  // Set up search functionality for cuisine search bar
+  if (cuisineSearchBtn && cuisineSearchInput) {
+    cuisineSearchBtn.addEventListener("click", () => {
+      const query = cuisineSearchInput.value.trim()
+      if (query) {
+        // If we're on the cuisines page, try to filter cuisines first
+        if (window.location.pathname.includes("cuisines.html")) {
+          // Try to filter cuisines first
+          const cuisineCards = document.querySelectorAll(".cuisine-card")
+          let cuisineFound = false
+
+          cuisineCards.forEach((card) => {
+            const cuisineName = card.querySelector("h3").textContent.toLowerCase()
+            if (cuisineName.toLowerCase() === query.toLowerCase()) {
+              cuisineFound = true
+              // If exact match, load that cuisine's meals
+              loadCuisineMeals(cuisineName)
+              return
+            }
+          })
+
+          // If no exact cuisine match, redirect to index for general search
+          if (!cuisineFound) {
+            window.location.href = `index.html?search=${encodeURIComponent(query)}`
+          }
+        } else {
+          // If not on cuisines page, redirect to index with search parameter
+          window.location.href = `index.html?search=${encodeURIComponent(query)}`
+        }
+      }
+    })
+
+    cuisineSearchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        const query = cuisineSearchInput.value.trim()
+        if (query) {
+          if (window.location.pathname.includes("cuisines.html")) {
+            // Try to filter cuisines first
+            const cuisineCards = document.querySelectorAll(".cuisine-card")
+            let cuisineFound = false
+
+            cuisineCards.forEach((card) => {
+              const cuisineName = card.querySelector("h3").textContent.toLowerCase()
+              if (cuisineName.toLowerCase() === query.toLowerCase()) {
+                cuisineFound = true
+                // If exact match, load that cuisine's meals
+                loadCuisineMeals(cuisineName)
+                return
+              }
+            })
+
+            // If no exact cuisine match, redirect to index for general search
+            if (!cuisineFound) {
+              window.location.href = `index.html?search=${encodeURIComponent(query)}`
+            }
+          } else {
+            // If not on cuisines page, redirect to index with search parameter
+            window.location.href = `index.html?search=${encodeURIComponent(query)}`
+          }
+        }
+      }
+    })
+  }
+
+  // Check for search parameter in URL
+  const urlParams = new URLSearchParams(window.location.search)
+  const searchQuery = urlParams.get("search")
+
+  if (searchQuery && document.getElementById("search-results-section")) {
+    // If we have a search query in the URL, perform the search
+    performSearch(searchQuery)
+
+    // Scroll to search results
+    document.getElementById("search-results-section").scrollIntoView({ behavior: "smooth" })
+  }
+})
+
+// Update the performSearch function to accept a query parameter
+async function performSearch(searchQuery = null) {
+  const query =
+    searchQuery || (document.getElementById("searchInput") ? document.getElementById("searchInput").value.trim() : "")
   if (!query) return
 
   const searchResultsSection = document.getElementById("search-results-section")
@@ -526,11 +883,22 @@ async function performSearch() {
   if (allMealsSection) allMealsSection.style.display = "none"
   if (featuredMealsSection) featuredMealsSection.style.display = "none"
 
+  // Update the search input if it exists and the query was passed as parameter
+  const searchInput = document.getElementById("searchInput")
+  if (searchInput && searchQuery) {
+    searchInput.value = query
+  }
+
   // Show loading state
   searchResults.innerHTML = `
-    <div class="meal-card skeleton-loader"></div>
-    <div class="meal-card skeleton-loader"></div>
-    <div class="meal-card skeleton-loader"></div>
+    <div class="search-heading">
+      <h2>Searching for "${query}"...</h2>
+    </div>
+    <div class="meals-grid">
+      <div class="meal-card skeleton-loader"></div>
+      <div class="meal-card skeleton-loader"></div>
+      <div class="meal-card skeleton-loader"></div>
+    </div>
   `
   noResults.style.display = "none"
 
@@ -543,21 +911,85 @@ async function performSearch() {
       meals = await fetchMealsByArea(query)
     }
 
+    // If still no results, try to search by ingredient
     if (meals.length === 0) {
-      searchResults.innerHTML = ""
+      try {
+        const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${query}`)
+        const data = await response.json()
+        meals = data.meals || []
+      } catch (error) {
+        console.error("Error searching by ingredient:", error)
+      }
+    }
+
+    if (meals.length === 0) {
+      searchResults.innerHTML = `
+        <div class="search-heading">
+          <h2>Results for "${query}"</h2>
+        </div>
+      `
+      noResults.innerHTML = `
+        <p>No meals found for "${query}".</p>
+        <div class="suggestions">
+          <p>Try searching for:</p>
+          <ul>
+            <li>Cuisine names like "Italian", "Indian", or "Mexican"</li>
+            <li>Ingredients like "Chicken", "Beef", or "Potato"</li>
+            <li>Meal names like "Pasta", "Curry", or "Stew"</li>
+          </ul>
+        </div>
+      `
       noResults.style.display = "block"
       return
     }
 
     // Display results
-    searchResults.innerHTML = ""
-    meals.forEach((meal) => {
-      const mealCard = createMealCard(meal)
-      searchResults.appendChild(mealCard)
-    })
+    searchResults.innerHTML = `
+      <div class="search-heading">
+        <h2>Results for "${query}"</h2>
+      </div>
+    `
+
+    // Create a container for the meal cards
+    const mealsContainer = document.createElement("div")
+    mealsContainer.className = "meals-grid"
+    searchResults.appendChild(mealsContainer)
+
+    for (const meal of meals) {
+      // For meals that might not have full details (like from ingredient search)
+      // we need to fetch the full meal details
+      let fullMeal = meal
+      if (!meal.strCategory || !meal.strArea) {
+        try {
+          fullMeal = (await fetchMealById(meal.idMeal)) || meal
+        } catch (error) {
+          console.error("Error fetching full meal details:", error)
+        }
+      }
+
+      const mealCard = createMealCard(fullMeal)
+      mealsContainer.appendChild(mealCard)
+    }
   } catch (error) {
     console.error("Error performing search:", error)
-    searchResults.innerHTML = "<p>Error performing search. Please try again.</p>"
+    searchResults.innerHTML = `
+      <div class="search-heading">
+        <h2>Results for "${query}"</h2>
+      </div>
+      <p>Error performing search. Please try again.</p>
+    `
+  }
+}
+
+// Add a new function to fetch meals by ingredient
+async function fetchMealsByIngredient(ingredient) {
+  try {
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${ingredient}`)
+    const data = await response.json()
+    return data.meals || []
+  } catch (error) {
+    console.error("Error fetching meals by ingredient:", error)
+    return []
   }
 }
 
@@ -732,11 +1164,11 @@ if (backToCuisinesBtn) {
 
 // Cuisine search functionality
 const cuisineSearchBtn = document.getElementById("cuisineSearchBtn")
-const cuisineSearchInput = document.getElementById("cuisineSearchInput")
+const cuisineSearchInputElem = document.getElementById("cuisineSearchInput")
 
-if (cuisineSearchBtn && cuisineSearchInput) {
+if (cuisineSearchBtn && cuisineSearchInputElem) {
   cuisineSearchBtn.addEventListener("click", searchCuisines)
-  cuisineSearchInput.addEventListener("keypress", (e) => {
+  cuisineSearchInputElem.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
       searchCuisines()
     }
@@ -744,7 +1176,10 @@ if (cuisineSearchBtn && cuisineSearchInput) {
 }
 
 function searchCuisines() {
-  const query = cuisineSearchInput.value.trim().toLowerCase()
+  const cuisineSearchInputElem = document.getElementById("cuisineSearchInput")
+  if (!cuisineSearchInputElem) return
+
+  const query = cuisineSearchInputElem.value.trim().toLowerCase()
   if (!query) return
 
   const cuisineCards = document.querySelectorAll(".cuisine-card")
@@ -806,6 +1241,13 @@ async function showCuisineMealDetail(id, activeTab = "recipe") {
       return
     }
 
+    // Get user data to check if meal is favorited and rated
+    const userDataResponse = await fetch("get-user-data.php")
+    const userData = await userDataResponse.json()
+
+    const isFavorited = userData.favorites && userData.favorites.includes(meal.idMeal)
+    const userRating = userData.ratings && userData.ratings[meal.idMeal] ? userData.ratings[meal.idMeal] : 0
+
     // Get ingredients and measurements
     const ingredients = []
     for (let i = 1; i <= 20; i++) {
@@ -828,6 +1270,17 @@ async function showCuisineMealDetail(id, activeTab = "recipe") {
           <h2>${meal.strMeal}</h2>
           <p>Category: ${meal.strCategory}</p>
           <p>Origin: ${meal.strArea}</p>
+        </div>
+      </div>
+      
+      <div class="rating-container">
+        <p>Your Rating:</p>
+        <div class="rating-stars" data-meal-id="${meal.idMeal}">
+          <i class="ri-poker-hearts-${userRating >= 1 ? "fill" : "line"}" data-rating="1"></i>
+          <i class="ri-poker-hearts-${userRating >= 2 ? "fill" : "line"}" data-rating="2"></i>
+          <i class="ri-poker-hearts-${userRating >= 3 ? "fill" : "line"}" data-rating="3"></i>
+          <i class="ri-poker-hearts-${userRating >= 4 ? "fill" : "line"}" data-rating="4"></i>
+          <i class="ri-poker-hearts-${userRating >= 5 ? "fill" : "line"}" data-rating="5"></i>
         </div>
       </div>
       
@@ -901,11 +1354,58 @@ async function showCuisineMealDetail(id, activeTab = "recipe") {
     // Set up add to favorites button
     const addToFavoritesBtn = document.getElementById("cuisine-add-to-favorites")
     if (addToFavoritesBtn) {
+      if (isFavorited) {
+        addToFavoritesBtn.innerHTML = '<i class="ri-heart-fill"></i> Remove from Favorites'
+      } else {
+        addToFavoritesBtn.innerHTML = '<i class="ri-heart-line"></i> Add to Favorites'
+      }
+
       addToFavoritesBtn.dataset.id = meal.idMeal
       addToFavoritesBtn.addEventListener("click", () => {
-        addToFavorites(meal.idMeal)
+        toggleFavorite(meal.idMeal, isFavorited)
       })
     }
+
+    // Set up rating functionality
+    const ratingStars = document.querySelectorAll(".rating-stars i")
+    ratingStars.forEach((star) => {
+      star.addEventListener("click", async () => {
+        const rating = Number.parseInt(star.getAttribute("data-rating"))
+        const mealId = star.parentElement.getAttribute("data-meal-id")
+
+        try {
+          const response = await fetch("rate-meal.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `meal_id=${mealId}&rating=${rating}`,
+          })
+
+          const result = await response.json()
+
+          if (result.success) {
+            // Update the stars
+            ratingStars.forEach((s, index) => {
+              if (index < rating) {
+                s.classList.remove("ri-poker-hearts-line")
+                s.classList.add("ri-poker-hearts-fill")
+              } else {
+                s.classList.remove("ri-poker-hearts-fill")
+                s.classList.add("ri-poker-hearts-line")
+              }
+            })
+
+            alert(result.message)
+          } else {
+            alert(result.message)
+          }
+        } catch (error) {
+          console.error("Error rating meal:", error)
+          alert("Error rating meal. Please try again.")
+        }
+      })
+    })
   } catch (error) {
     console.error("Error showing meal details:", error)
     modalContent.innerHTML = "<p>Error loading meal details. Please try again.</p>"
