@@ -41,36 +41,74 @@ ul {
     font-weight: bold;
 }
 /* for index html */
-.navbar {
+.user-navbar {
     position: sticky;
-    top: 0;
-    left: 0;
     display: flex;
-    width: 100%;
     justify-content: space-between;
-    padding: 1rem 2rem;
-    background: #FFF4D1;
-    color: #602238;
-    z-index: 100;
-}
-.nav-link {
-    display: flex;
-    gap: 1.5rem;
-    padding: 10px;
     align-items: center;
+    padding: 0.8rem 1.5rem;
+    background-color: #FFF4D1;
+    border-bottom: 1px solid #e0d2a2;
+    z-index: 100;
+  }
+  
+  .nav-left,
+  .nav-center,
+  .nav-right {
+    display: flex;
+    align-items: center;
+  }
+  
+  .nav-center {
+    flex: 1;
+    justify-content: center;
+    color: #602238;
+  }
+  
+  .nav-left i,
+  .nav-right i {
+    font-size: 1.9rem;
     font-weight: 500;
-}
-.nav-link li {
-    margin: 0 30px;
-}
-.logo {
-    margin-top: 2px;
-}
-.navbar-right {
+    color: #602238; 
+    margin: 0 0.5rem;
+    cursor: pointer;
+    transition: 0.3s ease;
+  }
+  
+  .nav-right i:hover,
+  .nav-left i:hover {
+    color: #A26D75; /* mustard hover effect */
+  }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 60px; /* adjust this if needed */
+    right: 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 20px 30px; /* ⬅️ increase padding here */
+    z-index: 1000;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 320px; /* ⬅️ optional: set a fixed width if you want */
+  }
+  
+  .nav-links ul {
     list-style: none;
-    padding: 0;
     margin: 0;
-}
+    padding: 0;
+  }
+  
+  .nav-links ul li {
+    margin: 10px 0;
+  }
+  
+  .nav-links ul li a {
+    color: #602238;
+    text-decoration: none;
+  }
+  
 /* start of header */
 header {
     width: 100vw;
