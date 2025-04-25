@@ -1,1 +1,97 @@
-<p>cuisines Test</p>
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: signin.html');
+    exit();
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cuisines - Meal Finder</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-left">
+      <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
+    </div>
+    <div class="navbar-center">
+    <ul class="nav-link">
+      <li><a href="index.html">Home</a></li>
+      <li class="active"><a href="cuisines.html">Cuisines</a></li>
+      <li><a href="about.html">About Us</a></li>
+    </ul>
+    </div>
+    <div class="navbar-right">
+      <div class="searchBar">
+        <input type="text" placeholder="Search cuisines..." id="cuisineSearchInput" />
+        <button id="cuisineSearchBtn"><i class="ri-search-line"></i></button>
+        <li><a href="logout.php" class="si-btn">Log Out</a></li>
+      </div>
+    </div>
+    <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
+  </nav>
+
+  <!-- Cuisines Header -->
+  <div class="cuisines-header">
+    <div class="container">
+      <h1>Explore Cuisines From Around The World</h1>
+      <p>Discover delicious recipes from different cultures and regions</p>
+    </div>
+  </div>
+
+  <!-- Cuisines Grid -->
+  <section id="cuisines-grid-section">
+    <div class="container">
+      <h2>All Cuisines</h2>
+      <div id="cuisines-grid" class="cuisines-grid">
+        <!-- Cuisine cards will be dynamically inserted here -->
+        <div class="cuisine-card skeleton-loader"></div>
+        <div class="cuisine-card skeleton-loader"></div>
+        <div class="cuisine-card skeleton-loader"></div>
+        <div class="cuisine-card skeleton-loader"></div>
+        <div class="cuisine-card skeleton-loader"></div>
+        <div class="cuisine-card skeleton-loader"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cuisine Meals Section -->
+  <section id="cuisine-meals-section" style="display: none;">
+    <div class="container">
+      <div class="cuisine-header">
+        <h2 id="selected-cuisine-title">Cuisine Name</h2>
+        <button id="back-to-cuisines" class="btn"><i class="ri-arrow-left-line"></i> Back to All Cuisines</button>
+      </div>
+      <div id="cuisine-meals" class="meals-grid">
+        <!-- Meals for selected cuisine will be dynamically inserted here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Meal Details Modal -->
+  <div id="cuisineMealDetailModal" class="modal">
+    <div class="modal-content">
+      <span class="close-cuisine-modal">&times;</span>
+      <div id="cuisineMealDetailContent">
+        <!-- Meal details will be dynamically inserted here -->
+      </div>
+      <div class="modal-actions">
+        <button id="cuisine-add-to-favorites" class="btn"><i class="ri-heart-line"></i> Add to Favorites</button>
+        <button id="cuisine-watch-video" class="btn"><i class="ri-youtube-line"></i> Watch Video</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <footer>
+    <p>All Rights Reserved. | April 2025</p>
+  </footer>
+</body>
+</html>
