@@ -35,9 +35,6 @@ a {
 a:hover{
     color: #A26D75;
     text-decoration: none;
-a:hover {
-  color: #f4d864;
-  text-decoration: none;
 }
 ul {
   list-style: none;
@@ -230,21 +227,19 @@ header {
     background: #602238;
     width: 80px;
     height: 40px;
-    font-size: 15px;
-  padding: 8px 15px;
-  border-radius: 30px;
-  color: #f4d864;
-  background: #602238;
-  width: 80px;
-  height: 40px;
-  font-size: 15px;
-  display: inline-block;
-  text-align: center;
+    font-size: 13px;
+    display: inline-block;
+    text-align: center;
+    font-weight: 600;
 }
 .si-btn:hover {
   background: #f4d864;
   color: #602238;
   border: #602238 2px solid;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-block;
+  text-align: center;
 }
 .menuBtn {
   position: absolute;
