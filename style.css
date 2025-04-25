@@ -196,50 +196,23 @@ header {
   background: #602238;
   color: #f4d864;
 }
-/* log out button */
-.logout-btn {
-    padding: 8px 15px;
-    background: #602238;
-    border-radius: 30px;
-    color: #EFE9D3;
-    width: 80px;
-    height: 40px;
-    font-size: 20px;
-  padding: 8px 15px;
-  background: #602238;
-  border-radius: 30px;
-  color: #f4d864;
-  width: 80px;
-  height: 40px;
-  font-size: 20px;
-}
-.logout-btn:hover {
-    background: #A26D75;
-    color: #602238;
-  background: #f4d864;
-  color: #602238;
-}
-/* user sign in button */
+/* sign out button */
 .si-btn {
-    padding: 8px 15px;
+    padding: 8px 10px;
     border-radius: 30px;
     color: #EFE9D3;
     background: #602238;
     width: 80px;
     height: 40px;
-    font-size: 13px;
+    font-size: 14px;
     display: inline-block;
     text-align: center;
-    font-weight: 600;
 }
 .si-btn:hover {
+  padding: 8px 10px !important;
   background: #f4d864;
   color: #602238;
   border: #602238 2px solid;
-  font-size: 13px;
-  font-weight: 600;
-  display: inline-block;
-  text-align: center;
 }
 .menuBtn {
   position: absolute;
