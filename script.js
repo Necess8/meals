@@ -44,7 +44,7 @@ if (nextBtn && prevBtn && listImgs.length > 0) {
 
     // Move listInfo (if you have multiple sections for text)
     if (listInfo) {
-      listInfo.style.transform = `translateY(${index * -100}%)`;
+      listInfo.style.transform = `translateY(${index * -20}%)`;
     }
   });
 
@@ -53,7 +53,7 @@ if (nextBtn && prevBtn && listImgs.length > 0) {
     index = (index - 1 + listImgs.length) % listImgs.length;
     listImgs[index].classList.add("active");
     if (listInfo) {
-      listInfo.style.transform = `translateY(${index * -100}%)`;
+      listInfo.style.transform = `translateY(${index * -20}%)`;
     }
   });
 }
@@ -74,9 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let swiper;
   if (swiperElement) {
     swiper = new Swiper(".mySwiper", {
-      slidesPerView: 1,
+      slidesPerView: 3,
       spaceBetween: 30,
-      loop: true,
+      loop: false,
       pagination: {
         el: ".my-pagination",
         clickable: true,

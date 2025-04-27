@@ -1,13 +1,16 @@
+// menu toggle
 document.addEventListener('DOMContentLoaded', () => {
-  // Toggle mobile nav
-  const menuBtn = document.querySelector(".menuBtn");
-  const navlink = document.querySelector(".nav-link");
+  const menuTog = document.querySelector('.menuTog');
+  const menuLinks = document.querySelector('.navbar-links');
 
-  if (menuBtn && navlink) {
-    menuBtn.addEventListener("click", () => {
-      navlink.classList.toggle("mobile-menu");
+  if (menuTog && menuLinks) {
+    menuTog.addEventListener('click', () => {
+      menuLinks.style.display = menuLinks.style.display === 'block' ? 'none' : 'block';
     });
+  } else {
+    console.log("Menu button or links not found");
   }
+});
 
   // Load user's favorite meals
   loadFavoriteMeals();
@@ -40,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
       profileMealDetailModal.style.display = "none";
     }
   });
-});
 
 // API Functions
 async function fetchMealById(id) {
