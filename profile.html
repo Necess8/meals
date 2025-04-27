@@ -1,10 +1,4 @@
-<?php
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: index.html');
-    exit();
-}
-?>
+<?php include 'check-session.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,46 +13,31 @@ if (!isset($_SESSION['user_id'])) {
   <!-- Navbar -->
   <nav class="user-navbar">
     <div class="navbar-left">
-        <i class='bx bxs-user-circle'></i>
-        <i class="ri-search-line"></i> <!-- Search icon -->
+      <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
     </div>
-  
     <div class="navbar-center">
-      <h1 class="logo"><i class="ri-bowl-line"></i> Meal Finder</h1>
+      <ul class="nav-link">
+        <li><a href="userpage.html">Home</a></li>
+        <li><a href="cuisines.html">Cuisines</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li class="active"><a href="profile.html">My Profile</a></li>
+      </ul>
     </div>
-  
     <div class="navbar-right">
-        <!-- <div class="searchBar">
-            <input type="text" placeholder="Search meals or cuisines..." id="searchInput" />
-            <button id="searchBtn"><i class="ri-search-line"></i></button>
-            
-          </div> -->
-      <a href="history.html" class="historyBtn"><i class="ri-history-fill"></i></a>
-      <a href="#" class="menuTog"><i class="ri-menu-line"></i></a> <!-- Menu icon -->
+      <div class="searchBar">
+        <input type="text" placeholder="Search meals or cuisines..." id="searchInput" />
+        <button id="searchBtn"><i class="ri-search-line"></i></button>
+      </div>
+      <span class="username-display" id="usernameDisplay"></span>
+      <a href="logout.php" class="si-btn">Sign Out</a>
+      <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
     </div>
-    <div class="navbar-links">
-        <ul>
-            <li class="active"><a href="userpage.html">Home</a></li>
-            <li class="active"><a href="cuisines.html">Cuisines</a></li>
-            <li class="active"><a href="about.html">About Us</a></li>
-            <li><a href="logout.php" class="si-btn">Sign Out</a></li>
-        </ul>
-    </div>  
-  </nav>  
-
-  <!-- Profile Header -->
-  <div class="profile-header">
-    <div class="container">
-      <h1>My Profile</h1>
-      <p>Welcome, <span id="username"><?php echo $_SESSION['username']; ?></span>!</p>
-    </div>
-  </div>
+  </nav>
 
   <!-- Favorite Meals Section -->
   <section id="favorite-meals-section">
     <div class="container">
       <h2>My Favorite Meals <i class="ri-heart-fill"></i></h2>
-      <p class="section-description">You can save up to 10 favorite meals for quick access.</p>
       <div id="favorite-meals" class="meals-grid">
         <!-- Favorite meals will be dynamically inserted here -->
         <div class="meal-card skeleton-loader"></div>
@@ -75,7 +54,6 @@ if (!isset($_SESSION['user_id'])) {
   <section id="rated-meals-section">
     <div class="container">
       <h2>My Rated Meals <i class="ri-poker-hearts-fill"></i></h2>
-      <p class="section-description">Meals you've rated from 1 to 5 hearts.</p>
       <div id="rated-meals" class="meals-grid">
         <!-- Rated meals will be dynamically inserted here -->
         <div class="meal-card skeleton-loader"></div>

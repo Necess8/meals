@@ -60,6 +60,19 @@ if (nextBtn && prevBtn && listImgs.length > 0) {
 
 // User page menu toggle
 document.addEventListener('DOMContentLoaded', () => {
+  // Display username in navbar
+  const usernameDisplay = document.getElementById('usernameDisplay');
+  if (usernameDisplay) {
+    fetch('get-username.php')
+      .then(response => response.json())
+      .then(data => {
+        if (data.username) {
+          usernameDisplay.textContent = data.username;
+        }
+      })
+      .catch(error => console.error('Error fetching username:', error));
+  }
+
   const menuToggle = document.querySelector('.menuTog');
   const menuLinks = document.querySelector('.nav-links');
 
@@ -98,8 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Load featured meals
-  loadFeaturedMeals();
+  // Load featured meals (top 5 highest rated)
+  loadTopRatedMeals();
 
   // Load all meals (first page)
   loadAllMeals();
@@ -123,18 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchInput) {
       searchInput.value = searchQuery;
       performSearch();
-    }
-  }
-  
-  // Check if there's a stored search query from another page
-  const lastSearchQuery = sessionStorage.getItem('lastSearchQuery');
-  if (lastSearchQuery && !searchQuery) {
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      searchInput.value = lastSearchQuery;
-      performSearch();
-      // Clear the stored query after using it
-      sessionStorage.removeItem('lastSearchQuery');
     }
   }
 
@@ -180,6 +181,25 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.key === "Enter") {
         searchCuisines();
       }
+    });
+  }
+
+  // Set up sorting and filtering
+  const sortSelect = document.getElementById("sort-select");
+  const categoryFilter = document.getElementById("category-filter");
+
+  if (sortSelect) {
+    sortSelect.addEventListener("change", () => {
+      sortMeals(sortSelect.value);
+    });
+  }
+
+  if (categoryFilter) {
+    // Load categories first
+    loadCategories();
+    
+    categoryFilter.addEventListener("change", () => {
+      filterMealsByCategory(categoryFilter.value);
     });
   }
 });
@@ -257,6 +277,28 @@ async function fetchAllAreas() {
   }
 }
 
+async function fetchAllCategories() {
+  try {
+    const response = await fetch("https://www.themealdb.com/api/json/v1/1/list.php?c=list");
+    const data = await response.json();
+    return data.meals || [];
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return [];
+  }
+}
+
+async function fetchMealsByCategory(category) {
+  try {
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${category}`);
+    const data = await response.json();
+    return data.meals || [];
+  } catch (error) {
+    console.error("Error fetching meals by category:", error);
+    return [];
+  }
+}
+
 // Get user's rating for a meal
 async function getUserRating(mealId) {
   try {
@@ -301,25 +343,47 @@ function generateRatingStars(rating) {
 }
 
 // UI Functions
-async function loadFeaturedMeals() {
+async function loadTopRatedMeals() {
   const featuredContainer = document.getElementById("featured-meals-container");
   if (!featuredContainer) return;
 
   featuredContainer.innerHTML = ""; // Clear skeleton loaders
 
   try {
-    const meals = await fetchRandomMeals(6);
-
-    for (const meal of meals) {
-      // Get average rating for each meal
+    // First get all meals
+    const letters = ["a", "b", "c", "s", "m", "p"];
+    let allMeals = [];
+    
+    for (const letter of letters) {
+      const meals = await fetchMealsByFirstLetter(letter);
+      allMeals = [...allMeals, ...meals];
+    }
+    
+    // Remove duplicates
+    allMeals = [...new Map(allMeals.map((meal) => [meal.idMeal, meal])).values()];
+    
+    // Get ratings for all meals
+    const mealsWithRatings = [];
+    
+    for (const meal of allMeals) {
       const avgRating = await getAverageRating(meal.idMeal);
-      meal.avgRating = avgRating;
-      
+      mealsWithRatings.push({
+        ...meal,
+        avgRating: avgRating
+      });
+    }
+    
+    // Sort by rating (highest first) and take top 5
+    const topRatedMeals = mealsWithRatings
+      .sort((a, b) => b.avgRating - a.avgRating)
+      .slice(0, 5);
+
+    for (const meal of topRatedMeals) {
       const mealCard = createFeaturedMealCard(meal);
       featuredContainer.appendChild(mealCard);
     }
   } catch (error) {
-    console.error("Error loading featured meals:", error);
+    console.error("Error loading top rated meals:", error);
   }
 }
 
@@ -451,7 +515,6 @@ async function rateMeal(mealId, rating) {
     });
 
     const result = await response.json();
-    console.log(result);
     
     // If we have an average rating in the response, update it on the page
     if (result.avgRating) {
@@ -488,6 +551,9 @@ function updateAverageRatingDisplay(mealId, avgRating) {
 let currentPage = 1;
 const mealsPerPage = 12;
 let allMealsList = [];
+let filteredMealsList = [];
+let currentSortOption = "default";
+let currentCategoryFilter = "all";
 
 async function loadAllMeals() {
   const allMealsContainer = document.getElementById("all-meals");
@@ -507,19 +573,16 @@ async function loadAllMeals() {
 
       // Remove duplicates
       allMealsList = [...new Map(allMealsList.map((meal) => [meal.idMeal, meal])).values()];
+      
+      // Initialize filtered list
+      filteredMealsList = [...allMealsList];
     }
 
     // Display current page
     displayMealsPage(currentPage);
 
-    // Set up load more button
-    const loadMoreBtn = document.getElementById("load-more");
-    if (loadMoreBtn) {
-      loadMoreBtn.addEventListener("click", () => {
-        currentPage++;
-        displayMealsPage(currentPage, true);
-      });
-    }
+    // Set up pagination
+    setupPagination();
   } catch (error) {
     console.error("Error loading all meals:", error);
   }
@@ -531,7 +594,7 @@ async function displayMealsPage(page, append = false) {
 
   const startIndex = (page - 1) * mealsPerPage;
   const endIndex = startIndex + mealsPerPage;
-  const mealsToDisplay = allMealsList.slice(startIndex, endIndex);
+  const mealsToDisplay = filteredMealsList.slice(startIndex, endIndex);
 
   if (!append) {
     allMealsContainer.innerHTML = "";
@@ -545,11 +608,59 @@ async function displayMealsPage(page, append = false) {
     const mealCard = createMealCard(meal);
     allMealsContainer.appendChild(mealCard);
   }
+}
 
-  // Hide load more button if we've displayed all meals
-  const loadMoreBtn = document.getElementById("load-more");
-  if (loadMoreBtn) {
-    loadMoreBtn.style.display = endIndex >= allMealsList.length ? "none" : "block";
+function setupPagination() {
+  const paginationContainer = document.getElementById("pagination");
+  if (!paginationContainer) return;
+
+  paginationContainer.innerHTML = "";
+
+  const totalPages = Math.ceil(filteredMealsList.length / mealsPerPage);
+  
+  // Previous button
+  if (currentPage > 1) {
+    const prevButton = document.createElement("button");
+    prevButton.className = "pagination-button";
+    prevButton.innerHTML = "&laquo; Prev";
+    prevButton.addEventListener("click", () => {
+      currentPage--;
+      displayMealsPage(currentPage);
+      setupPagination();
+      window.scrollTo(0, document.getElementById("all-meals-section").offsetTop - 100);
+    });
+    paginationContainer.appendChild(prevButton);
+  }
+  
+  // Page numbers
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(totalPages, currentPage + 2);
+  
+  for (let i = startPage; i <= endPage; i++) {
+    const pageButton = document.createElement("button");
+    pageButton.className = `pagination-button ${i === currentPage ? "active" : ""}`;
+    pageButton.textContent = i;
+    pageButton.addEventListener("click", () => {
+      currentPage = i;
+      displayMealsPage(currentPage);
+      setupPagination();
+      window.scrollTo(0, document.getElementById("all-meals-section").offsetTop - 100);
+    });
+    paginationContainer.appendChild(pageButton);
+  }
+  
+  // Next button
+  if (currentPage < totalPages) {
+    const nextButton = document.createElement("button");
+    nextButton.className = "pagination-button";
+    nextButton.innerHTML = "Next &raquo;";
+    nextButton.addEventListener("click", () => {
+      currentPage++;
+      displayMealsPage(currentPage);
+      setupPagination();
+      window.scrollTo(0, document.getElementById("all-meals-section").offsetTop - 100);
+    });
+    paginationContainer.appendChild(nextButton);
   }
 }
 
@@ -869,9 +980,6 @@ async function performSearch() {
   const searchInput = document.getElementById("searchInput");
   const query = searchInput.value.trim();
   if (!query) return;
-
-  // Store the search query in sessionStorage so we can use it across pages
-  sessionStorage.setItem('lastSearchQuery', query);
   
   // If we're not on the userpage, redirect to userpage with search parameter
   if (!window.location.href.includes('userpage.html')) {
@@ -884,6 +992,7 @@ async function performSearch() {
   const noResults = document.getElementById("no-results");
   const allMealsSection = document.getElementById("all-meals-section");
   const featuredMealsSection = document.getElementById("featured-meals");
+  const sortOptionsSection = document.getElementById("sort-options");
 
   if (!searchResultsSection || !searchResults || !noResults) return;
 
@@ -891,6 +1000,7 @@ async function performSearch() {
   searchResultsSection.style.display = "block";
   if (allMealsSection) allMealsSection.style.display = "none";
   if (featuredMealsSection) featuredMealsSection.style.display = "none";
+  if (sortOptionsSection) sortOptionsSection.style.display = "none";
 
   // Show loading state
   searchResults.innerHTML = `
@@ -904,7 +1014,19 @@ async function performSearch() {
     // First try to search by meal name
     let meals = await fetchMealsByName(query);
 
-    // If no results, try to search by area/cuisine
+    // If no results, try to search by category
+    if (meals.length === 0) {
+      const categories = await fetchAllCategories();
+      const matchingCategory = categories.find(cat => 
+        cat.strCategory.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      if (matchingCategory) {
+        meals = await fetchMealsByCategory(matchingCategory.strCategory);
+      }
+    }
+
+    // If still no results, try to search by area/cuisine
     if (meals.length === 0) {
       meals = await fetchMealsByArea(query);
     }
@@ -1391,3 +1513,95 @@ async function addToFavorites(mealId) {
     alert("Error adding to favorites. Please try again.");
   }
 }
+
+// Load categories for filter dropdown
+async function loadCategories() {
+  const categoryFilter = document.getElementById("category-filter");
+  if (!categoryFilter) return;
+  
+  try {
+    const categories = await fetchAllCategories();
+    
+    // Add options to the dropdown
+    categories.forEach(category => {
+      const option = document.createElement("option");
+      option.value = category.strCategory;
+      option.textContent = category.strCategory;
+      categoryFilter.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error loading categories:", error);
+  }
+}
+
+// Sort meals
+function sortMeals(sortOption) {
+  currentSortOption = sortOption;
+  
+  // Apply both sort and filter
+  applyFiltersAndSort();
+}
+
+// Filter meals by category
+async function filterMealsByCategory(category) {
+  currentCategoryFilter = category;
+  
+  // Apply both sort and filter
+  applyFiltersAndSort();
+}
+
+// Apply both sorting and filtering
+async function applyFiltersAndSort() {
+  // Start with all meals
+  if (allMealsList.length === 0) {
+    await loadAllMeals();
+  }
+  
+  // Apply category filter first
+  if (currentCategoryFilter === "all") {
+    filteredMealsList = [...allMealsList];
+  } else {
+    // If we're filtering by category, we need to fetch those meals
+    const categoryMeals = await fetchMealsByCategory(currentCategoryFilter);
+    
+    // Create a set of meal IDs for quick lookup
+    const categoryMealIds = new Set(categoryMeals.map(meal => meal.idMeal));
+    
+    // Filter the all meals list to only include meals from this category
+    filteredMealsList = allMealsList.filter(meal => categoryMealIds.has(meal.idMeal));
+    
+    // If we don't have enough meals in our all meals list, add the category meals
+    if (filteredMealsList.length < categoryMeals.length) {
+      const existingIds = new Set(filteredMealsList.map(meal => meal.idMeal));
+      const additionalMeals = categoryMeals.filter(meal => !existingIds.has(meal.idMeal));
+      
+      // For each additional meal, fetch full details
+      for (const meal of additionalMeals) {
+        const fullMeal = await fetchMealById(meal.idMeal);
+        if (fullMeal) {
+          filteredMealsList.push(fullMeal);
+        }
+      }
+    }
+  }
+  
+  // Then apply sorting
+  switch (currentSortOption) {
+    case "a-z":
+      filteredMealsList.sort((a, b) => a.strMeal.localeCompare(b.strMeal));
+      break;
+    case "z-a":
+      filteredMealsList.sort((a, b) => b.strMeal.localeCompare(a.strMeal));
+      break;
+    default:
+      // Default sorting (no change)
+      break;
+  }
+  
+  // Reset to page 1 and display
+  currentPage = 1;
+  displayMealsPage(currentPage);
+  setupPagination();
+}
+
+// Create get-username.php file

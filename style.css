@@ -9,6 +9,7 @@ body {
   font-family: "Poppins", sans-serif;
   margin: 0;
   background: #fff4d1;
+  padding-top: 80px; /* Added to account for fixed navbar */
 }
 .hero {
   display: flex;
@@ -123,10 +124,19 @@ ul {
 .navbar-right .si-btn {
   color: #f4d864;
   background: #602238;
+  padding: 8px 16px;
+  border-radius: 20px;
+  margin-left: 10px;
 }
 .navbar-right i:hover,
 .navbar-left i:hover {
   color: #A26D75; 
+}
+
+.username-display {
+  font-weight: 600;
+  color: #602238;
+  margin-left: 10px;
 }
 
 .navbar-links {
@@ -332,6 +342,39 @@ header {
 .navbar .searchBar button:hover {
   background-color: #a26d75;
   color: #f4d864;
+}
+
+/* Sort Options */
+#sort-options {
+  padding: 20px 0;
+  background: #fff4d1;
+}
+
+.sort-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.sort-select {
+  padding: 8px 15px;
+  border: 2px solid #602238;
+  border-radius: 20px;
+  background: #fff;
+  color: #602238;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+
+.sort-select:focus {
+  border-color: #a26d75;
+}
+
+.ml-4 {
+  margin-left: 20px;
 }
 
 /* Featured Meals Section */
@@ -603,18 +646,34 @@ header {
   justify-content: center;
   margin-top: 20px;
 }
-#load-more {
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.pagination-button {
   background: #602238;
   color: #f4d864;
   border: none;
-  padding: 10px 20px;
+  padding: 8px 15px;
   border-radius: 20px;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
-#load-more:hover {
+
+.pagination-button:hover {
   background: #a26d75;
+}
+
+.pagination-button.active {
+  background: #f4d864;
+  color: #602238;
+  font-weight: bold;
 }
 
 /* Search Results Section */
@@ -867,6 +926,46 @@ header {
   background: #fff4d1;
 }
 
+/* About Page */
+.about-content {
+  padding: 120px 0 60px;
+  background: #fff4d1;
+}
+
+.about-content h1 {
+  color: #602238;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.about-content h2 {
+  color: #602238;
+  margin: 30px 0 15px;
+}
+
+.about-content p {
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.about-content ul {
+  margin-left: 20px;
+  margin-bottom: 20px;
+}
+
+.about-content ul li {
+  margin-bottom: 10px;
+  position: relative;
+  padding-left: 20px;
+}
+
+.about-content ul li:before {
+  content: "•";
+  color: #602238;
+  position: absolute;
+  left: 0;
+}
+
 /* Skeleton Loaders */
 .skeleton-loader {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -1061,6 +1160,13 @@ footer {
   flex-direction: column;
   gap: 8px;
   margin: 10px 0;
+  opacity: 0; /* Hide initially */
+  transition: opacity 0.3s ease;
+}
+
+.meal-card:hover .rating-container,
+.card:hover .rating-container {
+  opacity: 1; /* Show on hover */
 }
 
 /* Average rating styles */
@@ -1130,4 +1236,12 @@ footer {
     flex-direction: column;
     align-items: flex-end;
   }
+}
+
+/* Error message styles */
+.error-message {
+  color: #ff3333;
+  margin-bottom: 15px;
+  font-size: 14px;
+  display: none;
 }

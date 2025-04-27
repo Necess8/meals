@@ -1,9 +1,6 @@
 <?php
 session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     echo "You must be logged in to remove favorites.";
     exit();
@@ -22,21 +19,27 @@ if ($conn->connect_error) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user_id'];
-    $meal_id = $_POST['meal_id'] ?? '';
-    
-    if (empty($meal_id)) {
-        echo "Meal ID is required.";
+    $meal_id = $_POST['meal_id'];
+
+    if (!$meal_id) {
+        echo "Missing meal ID.";
         exit();
     }
-    
+
     $stmt = $conn->prepare("DELETE FROM favorites WHERE user_id = ? AND meal_id = ?");
     $stmt->bind_param("is", $user_id, $meal_id);
-    
+
     if ($stmt->execute()) {
-        echo "Meal removed from favorites successfully!";
+        if ($stmt->affected_rows > 0) {
+            echo "Meal removed from favorites!";
+        } else {
+            echo "This meal was not in your favorites.";
+        }
     } else {
         echo "Error removing from favorites: " . $stmt->error;
     }
+} else {
+    echo "Invalid request method.";
 }
 
 $conn->close();

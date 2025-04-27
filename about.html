@@ -1,32 +1,60 @@
-<?php
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: signin.html');
-    exit();
-}
-?>
+<?php include 'check-session.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>About MealFinder</title>
-  <link rel="stylesheet" href="uprofile.css"/>
+  <link rel="stylesheet" href="style.css"/>
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
 </head>
 <body>
   <!-- Navbar -->
-  <nav class="navbar">
-    <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
-    <ul class="nav-link">
-      <li class="active"><a href="index.html">Home</a></li>
-      <li class="active"><a href="#">Meals</a></li>
-      <li class="active"><a href="#">Cuisines</a></li>
-      <li class="active"><a href="#">About Us</a></li>
-      <!-- <li class="active"><a href="signin.html" class="logout-btn">Log Out</a></li> -->
-    </ul>
-    <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
+  <nav class="user-navbar">
+    <div class="navbar-left">
+      <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
+    </div>
+    <div class="navbar-center">
+      <ul class="nav-link">
+        <li><a href="userpage.html">Home</a></li>
+        <li><a href="cuisines.html">Cuisines</a></li>
+        <li class="active"><a href="about.html">About Us</a></li>
+        <li><a href="profile.html">My Profile</a></li>
+      </ul>
+    </div>
+    <div class="navbar-right">
+      <div class="searchBar">
+        <input type="text" placeholder="Search meals or cuisines..." id="searchInput" />
+        <button id="searchBtn"><i class="ri-search-line"></i></button>
+      </div>
+      <span class="username-display" id="usernameDisplay"></span>
+      <a href="logout.php" class="si-btn">Sign Out</a>
+      <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
+    </div>
   </nav>
+  
+  <div class="about-content">
+    <div class="container">
+      <h1>About Meal Finder</h1>
+      <p>Meal Finder is your ultimate destination for discovering delicious recipes from around the world. Our platform allows you to search for meals by name, ingredients, or browse by cuisine to find your next favorite dish.</p>
+      
+      <h2>Our Mission</h2>
+      <p>We aim to make cooking enjoyable and accessible for everyone by providing a vast collection of recipes with easy-to-follow instructions and ingredients.</p>
+      
+      <h2>Features</h2>
+      <ul>
+        <li>Search for meals by name or ingredients</li>
+        <li>Browse recipes by cuisine</li>
+        <li>Rate your favorite meals</li>
+        <li>Save recipes to your favorites</li>
+        <li>Detailed cooking instructions and ingredient lists</li>
+      </ul>
+    </div>
+  </div>
+  
   <script src="script.js"></script>
+  <footer>
+    <p>All Rights Reserved. | April 2025</p>
+  </footer>
 </body>
 </html>

@@ -1,11 +1,9 @@
 <?php
 session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+header('Content-Type: application/json');
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(["rating" => 0]);
+    echo json_encode(['rating' => 0]);
     exit();
 }
 
@@ -16,29 +14,26 @@ $pass = '';
 $conn = new mysqli($host, $user, $pass, $db);
 
 if ($conn->connect_error) {
-    echo json_encode(["rating" => 0, "error" => "Connection failed"]);
+    echo json_encode(['error' => 'Connection failed: ' . $conn->connect_error]);
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+if (isset($_GET['meal_id'])) {
     $user_id = $_SESSION['user_id'];
-    $meal_id = $_GET['meal_id'] ?? '';
-    
-    if (empty($meal_id)) {
-        echo json_encode(["rating" => 0, "error" => "Meal ID is required"]);
-        exit();
-    }
-    
+    $meal_id = $_GET['meal_id'];
+
     $stmt = $conn->prepare("SELECT rating FROM ratings WHERE user_id = ? AND meal_id = ?");
     $stmt->bind_param("is", $user_id, $meal_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($row = $result->fetch_assoc()) {
-        echo json_encode(["rating" => (int)$row['rating']]);
+        echo json_encode(['rating' => (int)$row['rating']]);
     } else {
-        echo json_encode(["rating" => 0]);
+        echo json_encode(['rating' => 0]);
     }
+} else {
+    echo json_encode(['error' => 'Missing meal_id parameter']);
 }
 
 $conn->close();

@@ -1,5 +1,17 @@
-// menu toggle
 document.addEventListener('DOMContentLoaded', () => {
+  // Display username in navbar
+  const usernameDisplay = document.getElementById('usernameDisplay');
+  if (usernameDisplay) {
+    fetch('get-username.php')
+      .then(response => response.json())
+      .then(data => {
+        if (data.username) {
+          usernameDisplay.textContent = data.username;
+        }
+      })
+      .catch(error => console.error('Error fetching username:', error));
+  }
+
   const menuTog = document.querySelector('.menuTog');
   const menuLinks = document.querySelector('.navbar-links');
 
@@ -7,10 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     menuTog.addEventListener('click', () => {
       menuLinks.style.display = menuLinks.style.display === 'block' ? 'none' : 'block';
     });
-  } else {
-    console.log("Menu button or links not found");
   }
-});
 
   // Load user's favorite meals
   loadFavoriteMeals();
@@ -31,6 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Clear search input if coming from another page
+  if (searchInput && !window.location.search.includes('search=')) {
+    searchInput.value = '';
+  }
+
   // Close modal when clicking the close button or outside the modal
   document.addEventListener("click", (e) => {
     const profileMealDetailModal = document.getElementById("profileMealDetailModal");
@@ -43,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
       profileMealDetailModal.style.display = "none";
     }
   });
+});
 
 // API Functions
 async function fetchMealById(id) {
@@ -103,6 +118,37 @@ async function getUserRating(mealId) {
   }
 }
 
+// Get average rating for a meal
+async function getAverageRating(mealId) {
+  try {
+    const response = await fetch(`get-average-rating.php?meal_id=${mealId}`);
+    const data = await response.json();
+    return data.avgRating || 0;
+  } catch (error) {
+    console.error("Error getting average rating:", error);
+    return 0;
+  }
+}
+
+// Helper function to generate rating stars HTML
+function generateRatingStars(rating) {
+  let starsHTML = '';
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  
+  for (let i = 1; i <= 5; i++) {
+    if (i <= fullStars) {
+      starsHTML += '<i class="ri-poker-hearts-fill"></i>';
+    } else if (i === fullStars + 1 && hasHalfStar) {
+      starsHTML += '<i class="ri-poker-hearts-fill half"></i>';
+    } else {
+      starsHTML += '<i class="ri-poker-hearts-line"></i>';
+    }
+  }
+  
+  return starsHTML;
+}
+
 // Load favorite meals
 async function loadFavoriteMeals() {
   const favoriteMealsContainer = document.getElementById("favorite-meals");
@@ -127,6 +173,10 @@ async function loadFavoriteMeals() {
     for (const mealId of favorites) {
       const meal = await fetchMealById(mealId);
       if (meal) {
+        // Get average rating
+        const avgRating = await getAverageRating(mealId);
+        meal.avgRating = avgRating;
+        
         const mealCard = createMealCard(meal, true);
         favoriteMealsContainer.appendChild(mealCard);
       }
@@ -161,6 +211,10 @@ async function loadRatedMeals() {
     for (const rating of ratings) {
       const meal = await fetchMealById(rating.meal_id);
       if (meal) {
+        // Get average rating
+        const avgRating = await getAverageRating(rating.meal_id);
+        meal.avgRating = avgRating;
+        
         const mealCard = createMealCard(meal, false, rating.rating);
         ratedMealsContainer.appendChild(mealCard);
       }
@@ -177,24 +231,33 @@ function createMealCard(meal, isFavorite = false, userRating = 0) {
   card.className = "meal-card";
   card.dataset.id = meal.idMeal;
 
-  // Generate rating stars HTML
-  let ratingHTML = '';
-  for (let i = 1; i <= 5; i++) {
-    if (i <= userRating) {
-      ratingHTML += `<i class="ri-poker-hearts-fill" data-rating="${i}"></i>`;
-    } else {
-      ratingHTML += `<i class="ri-poker-hearts-line" data-rating="${i}"></i>`;
-    }
-  }
+  // Get the average rating
+  const avgRating = meal.avgRating || 0;
 
   card.innerHTML = `
     <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
     <div class="meal-card-content">
       <h3>${meal.strMeal}</h3>
       <p>${meal.strCategory || "Category not available"}</p>
-      <div class="meal-rating" data-meal-id="${meal.idMeal}" data-user-rating="${userRating}">
-        ${ratingHTML}
+      
+      <div class="rating-container">
+        <div class="avg-rating" title="Average rating: ${avgRating}">
+          <span class="avg-rating-label">Avg: ${avgRating}</span>
+          <div class="avg-rating-stars">
+            ${generateRatingStars(avgRating)}
+          </div>
+        </div>
+        
+        <div class="meal-rating" data-meal-id="${meal.idMeal}" data-user-rating="${userRating}">
+          <span class="your-rating-label">Your rating:</span>
+          <i class="ri-poker-hearts-${userRating >= 1 ? 'fill' : 'line'}" data-rating="1"></i>
+          <i class="ri-poker-hearts-${userRating >= 2 ? 'fill' : 'line'}" data-rating="2"></i>
+          <i class="ri-poker-hearts-${userRating >= 3 ? 'fill' : 'line'}" data-rating="3"></i>
+          <i class="ri-poker-hearts-${userRating >= 4 ? 'fill' : 'line'}" data-rating="4"></i>
+          <i class="ri-poker-hearts-${userRating >= 5 ? 'fill' : 'line'}" data-rating="5"></i>
+        </div>
       </div>
+      
       <div class="meal-card-actions">
         <button class="view-recipe" data-id="${meal.idMeal}">View Recipe</button>
         <button class="view-ingredients" data-id="${meal.idMeal}">Ingredients</button>
@@ -290,6 +353,29 @@ function updateStarDisplay(container, rating) {
   container.querySelector(".meal-rating").dataset.userRating = rating;
 }
 
+// Update average rating display
+function updateAverageRatingDisplay(mealId, avgRating) {
+  // Update average rating in all meal cards with this ID
+  document.querySelectorAll(`[data-id="${mealId}"]`).forEach(card => {
+    const avgRatingElement = card.querySelector(".avg-rating");
+    if (avgRatingElement) {
+      avgRatingElement.querySelector(".avg-rating-label").textContent = `Avg: ${avgRating}`;
+      avgRatingElement.title = `Average rating: ${avgRating}`;
+      avgRatingElement.querySelector(".avg-rating-stars").innerHTML = generateRatingStars(avgRating);
+    }
+  });
+  
+  // Update in modal if open
+  const modal = document.getElementById("profileMealDetailModal");
+  if (modal && modal.style.display === "block") {
+    const modalAvgRating = modal.querySelector(".meal-detail-avg-rating");
+    if (modalAvgRating && modalAvgRating.dataset.mealId === mealId) {
+      modalAvgRating.querySelector("p").textContent = `Average Rating: ${avgRating}`;
+      modalAvgRating.querySelector(".stars").innerHTML = generateRatingStars(avgRating);
+    }
+  }
+}
+
 // Show meal detail
 async function showMealDetail(id, activeTab = "recipe") {
   const modal = document.getElementById("profileMealDetailModal");
@@ -333,6 +419,9 @@ async function showMealDetail(id, activeTab = "recipe") {
 
     // Get user's rating
     const userRating = await getUserRating(id);
+    
+    // Get average rating
+    const avgRating = await getAverageRating(id);
 
     // Create HTML content
     modalContent.innerHTML = `
@@ -342,14 +431,24 @@ async function showMealDetail(id, activeTab = "recipe") {
           <h2>${meal.strMeal}</h2>
           <p>Category: ${meal.strCategory}</p>
           <p>Origin: ${meal.strArea}</p>
-          <div class="meal-detail-rating" data-meal-id="${meal.idMeal}" data-user-rating="${userRating}">
-            <p>Your Rating:</p>
-            <div class="stars">
-              <i class="ri-poker-hearts-${userRating >= 1 ? 'fill' : 'line'}" data-rating="1"></i>
-              <i class="ri-poker-hearts-${userRating >= 2 ? 'fill' : 'line'}" data-rating="2"></i>
-              <i class="ri-poker-hearts-${userRating >= 3 ? 'fill' : 'line'}" data-rating="3"></i>
-              <i class="ri-poker-hearts-${userRating >= 4 ? 'fill' : 'line'}" data-rating="4"></i>
-              <i class="ri-poker-hearts-${userRating >= 5 ? 'fill' : 'line'}" data-rating="5"></i>
+          
+          <div class="meal-detail-ratings">
+            <div class="meal-detail-avg-rating" title="Average rating: ${avgRating}" data-meal-id="${meal.idMeal}">
+              <p>Average Rating: ${avgRating}</p>
+              <div class="stars">
+                ${generateRatingStars(avgRating)}
+              </div>
+            </div>
+            
+            <div class="meal-detail-rating" data-meal-id="${meal.idMeal}" data-user-rating="${userRating}">
+              <p>Your Rating:</p>
+              <div class="stars">
+                <i class="ri-poker-hearts-${userRating >= 1 ? 'fill' : 'line'}" data-rating="1"></i>
+                <i class="ri-poker-hearts-${userRating >= 2 ? 'fill' : 'line'}" data-rating="2"></i>
+                <i class="ri-poker-hearts-${userRating >= 3 ? 'fill' : 'line'}" data-rating="3"></i>
+                <i class="ri-poker-hearts-${userRating >= 4 ? 'fill' : 'line'}" data-rating="4"></i>
+                <i class="ri-poker-hearts-${userRating >= 5 ? 'fill' : 'line'}" data-rating="5"></i>
+              </div>
             </div>
           </div>
         </div>
@@ -471,8 +570,12 @@ async function rateMeal(mealId, rating) {
       body: `meal_id=${mealId}&rating=${rating}`,
     });
 
-    const result = await response.text();
-    console.log(result);
+    const result = await response.json();
+    
+    // If we have an average rating in the response, update it on the page
+    if (result.avgRating) {
+      updateAverageRatingDisplay(mealId, result.avgRating);
+    }
     
     // Reload rated meals to reflect changes
     loadRatedMeals();
@@ -526,15 +629,22 @@ async function removeFavorite(mealId) {
   }
 }
 
-// Update the performSearch function in profile.js
+// Search functionality
 async function performSearch() {
   const searchInput = document.getElementById("searchInput");
   const query = searchInput.value.trim();
   if (!query) return;
-
-  // Store the search query in sessionStorage so we can use it across pages
-  sessionStorage.setItem('lastSearchQuery', query);
   
   // Redirect to userpage with search parameter
   window.location.href = `userpage.html?search=${encodeURIComponent(query)}`;
+}
+
+// Handle menu button for mobile
+const menuBtn = document.querySelector(".menuBtn");
+const navlink = document.querySelector(".nav-link");
+
+if (menuBtn && navlink) {
+  menuBtn.addEventListener("click", () => {
+    navlink.classList.toggle("mobile-menu");
+  });
 }

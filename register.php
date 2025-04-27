@@ -1,4 +1,5 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -9,7 +10,12 @@ $pass = '';
 $conn = new mysqli($host, $user, $pass, $db);
 
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        echo json_encode(['error' => 'Connection failed: ' . $conn->connect_error]);
+    } else {
+        header('Location: index.html?error=' . urlencode('Connection failed') . '&type=register');
+    }
+    exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,34 +24,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validate username
     if (strlen($username) > 15 || preg_match('/\s/', $username)) {
-        echo "Username must be 15 characters or less with no spaces. <a href='signin.html'>Try again</a>";
-        exit();
-    }
-
-    if ($username === '' || $password === '') {
-        echo "All fields are required.";
-        exit();
-    }
-
-    // Check if username exists
-    $check = $conn->prepare("SELECT id FROM users WHERE username = ?");
-    $check->bind_param("s", $username);
-    $check->execute();
-    $check->store_result();
-
-    if ($check->num_rows > 0) {
-        echo "Username already exists. <a href='signin.html'>Try again</a>";
+        $error = "Username must be 15 characters or less with no spaces.";
+    } else if ($username === '' || $password === '') {
+        $error = "All fields are required.";
     } else {
-        $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-        $stmt->bind_param("ss", $username, $password);
+        // Check if username exists
+        $check = $conn->prepare("SELECT id FROM users WHERE username = ?");
+        $check->bind_param("s", $username);
+        $check->execute();
+        $check->store_result();
 
-        if ($stmt->execute()) {
-            header("Location: uprofile.html");
-            exit();
+        if ($check->num_rows > 0) {
+            $error = "Username already exists. Please choose another.";
         } else {
-            echo "Registration error: " . $stmt->error;
+            $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+            $stmt->bind_param("ss", $username, $password);
+
+            if ($stmt->execute()) {
+                // Get the new user's ID
+                $user_id = $conn->insert_id;
+                
+                // Set session variables
+                $_SESSION['user_id'] = $user_id;
+                $_SESSION['username'] = $username;
+                
+                // Return success for AJAX or redirect
+                if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    echo json_encode(['success' => true]);
+                } else {
+                    header("Location: userpage.html");
+                }
+                exit();
+            } else {
+                $error = "Registration error: " . $stmt->error;
+            }
         }
     }
+    
+    // Handle error response
+    if (isset($error)) {
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            echo json_encode(['error' => $error]);
+        } else {
+            header('Location: index.html?error=' . urlencode($error) . '&type=register');
+        }
+        exit();
+    }
 }
+
 $conn->close();
 ?>

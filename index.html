@@ -22,12 +22,13 @@
     <div class="container">
         <!-- Login Form -->
         <div class="form-box login">
-            <form action="login.php" method="POST">
+            <form id="loginForm">
                 <h2>Sign In to your Account</h2>
                 <div class="line"></div>
+                <div class="error-message" id="loginError"></div>
                 <div class="input-box">
                     <input type="text" name="username" placeholder="Username" required 
-                           maxlength="25" pattern="^\S{1,25}$" title="No spaces. Max 25 characters.">
+                           maxlength="15" pattern="^\S{1,15}$" title="No spaces. Max 15 characters.">
                     <i class="ri-user-3-fill"></i>
                 </div>
                 <div class="input-box">
@@ -40,12 +41,13 @@
 
         <!-- Register Form -->
         <div class="form-box register">
-            <form action="register.php" method="POST">
+            <form id="registerForm">
                 <h2>Create an Account</h2>
                 <div class="line"></div>
+                <div class="error-message" id="registerError"></div>
                 <div class="input-box">
                     <input type="text" name="username" placeholder="Username" required 
-                           maxlength="25" pattern="^\S{1,25}$" title="No spaces. Max 25 characters.">
+                           maxlength="15" pattern="^\S{1,15}$" title="No spaces. Max 15 characters.">
                     <i class="ri-user-3-fill"></i>
                 </div>
                 <div class="input-box">
@@ -74,5 +76,83 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for URL parameters for errors
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            const type = urlParams.get('type');
+            
+            if (error && type === 'login') {
+                const loginError = document.getElementById('loginError');
+                loginError.textContent = error;
+                loginError.style.display = 'block';
+                loginError.style.color = '#ff3333';
+            } else if (error && type === 'register') {
+                const registerError = document.getElementById('registerError');
+                registerError.textContent = error;
+                registerError.style.display = 'block';
+                registerError.style.color = '#ff3333';
+                // Activate register form
+                document.querySelector('.container').classList.add('active');
+            }
+            
+            // Handle login form submission
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                fetch('login.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        const loginError = document.getElementById('loginError');
+                        loginError.textContent = data.error;
+                        loginError.style.display = 'block';
+                        loginError.style.color = '#ff3333';
+                    } else {
+                        window.location.href = 'userpage.html';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+            
+            // Handle register form submission
+            document.getElementById('registerForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                fetch('register.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        const registerError = document.getElementById('registerError');
+                        registerError.textContent = data.error;
+                        registerError.style.display = 'block';
+                        registerError.style.color = '#ff3333';
+                    } else {
+                        window.location.href = 'userpage.html';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -18,26 +18,27 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 <body>
   <!-- Navbar -->
-  <nav class="navbar">
+  <nav class="user-navbar">
     <div class="navbar-left">
       <h1 class="logo"><i class="ri-bowl-line"></i>Meal Finder</h1>
     </div>
     <div class="navbar-center">
-    <ul class="nav-link">
-      <li class="active"><a href="userpage.html">Home</a></li>
-      <li><a href="cuisines.html">Cuisines</a></li>
-      <li><a href="about.html">About Us</a></li>
-      <li><a href="profile.html">My Profile</a></li>
-    </ul>
+      <ul class="nav-link">
+        <li class="active"><a href="userpage.html">Home</a></li>
+        <li><a href="cuisines.html">Cuisines</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="profile.html">My Profile</a></li>
+      </ul>
     </div>
     <div class="navbar-right">
       <div class="searchBar">
         <input type="text" placeholder="Search meals or cuisines..." id="searchInput" />
         <button id="searchBtn"><i class="ri-search-line"></i></button>
-        <li><a href="logout.php" class="si-btn">Sign Out</a></li>
       </div>
+      <span class="username-display" id="usernameDisplay"></span>
+      <a href="logout.php" class="si-btn">Sign Out</a>
+      <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
     </div>
-    <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
   </nav>
 
   <!-- for centering header -->
@@ -135,6 +136,26 @@ if (!isset($_SESSION['user_id'])) {
     </div>
   </section>
 
+  <!-- Sort Options -->
+  <section id="sort-options">
+    <div class="container">
+      <div class="sort-container">
+        <label for="sort-select">Sort by:</label>
+        <select id="sort-select" class="sort-select">
+          <option value="default">Default</option>
+          <option value="a-z">Name (A-Z)</option>
+          <option value="z-a">Name (Z-A)</option>
+        </select>
+        
+        <label for="category-filter" class="ml-4">Filter by Category:</label>
+        <select id="category-filter" class="sort-select">
+          <option value="all">All Categories</option>
+          <!-- Categories will be loaded dynamically -->
+        </select>
+      </div>
+    </div>
+  </section>
+
   <!-- All Meals Section -->
   <section id="all-meals-section">
     <div class="container">
@@ -149,7 +170,9 @@ if (!isset($_SESSION['user_id'])) {
         <div class="meal-card skeleton-loader"></div>
       </div>
       <div class="pagination-container">
-        <button id="load-more" class="btn">Load More</button>
+        <div id="pagination" class="pagination">
+          <!-- Pagination will be dynamically inserted here -->
+        </div>
       </div>
     </div>
   </section>
