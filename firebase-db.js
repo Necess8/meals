@@ -1,177 +1,174 @@
-// firebase-db.js - Database functions (no import/export, Firebase via script tag)
-// Assumes Firebase is already initialized in a script before this file
-// Add user to favorites
-function addToFavorites(userId, mealId) {
-    return database.ref(`favorites/${userId}/${mealId}`).set({
-        mealId: mealId,
-        addedAt: new Date().toISOString()
+// firebase-db.js - Updated to fix database operations
+import { db } from "./firebase-config.js"
+import {
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  collection,
+  query,
+  where,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+
+// Add user to Firestore
+export async function addUserToDatabase(user, username) {
+  try {
+    await setDoc(doc(db, "users", user.uid), {
+      username: username,
+      email: user.email,
+      createdAt: serverTimestamp(),
     })
-    .then(() => {
-        return { success: true, message: "Added to favorites!" };
-    })
-    .catch((error) => {
-        console.error("Error adding to favorites:", error);
-        return { success: false, error: error.message };
-    });
+    console.log("User added to Firestore")
+    return { success: true }
+  } catch (error) {
+    console.error("Error adding user to Firestore:", error)
+    return { success: false, error: error.message }
+  }
 }
 
-// Remove from favorites
-function removeFavorite(userId, mealId) {
-    return database.ref(`favorites/${userId}/${mealId}`).remove()
-        .then(() => {
-            return { success: true, message: "Removed from favorites!" };
-        })
-        .catch((error) => {
-            console.error("Error removing from favorites:", error);
-            return { success: false, error: error.message };
-        });
+// Update user last login time in Firestore
+export async function updateUserLastLogin(userId) {
+  try {
+    const userRef = doc(db, "users", userId)
+    await updateDoc(userRef, {
+      lastLogin: serverTimestamp(),
+    })
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating last login:", error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Get user data by UID
+export async function getUserData(userId) {
+  try {
+    const userRef = doc(db, "users", userId)
+    const userDoc = await getDoc(userRef)
+    if (!userDoc.exists()) {
+      return null
+    }
+    return userDoc.data()
+  } catch (error) {
+    console.error("Error getting user data:", error)
+    return null
+  }
+}
+
+// Add favorite to Firestore
+export async function addFavorite(userId, mealId) {
+  try {
+    await setDoc(doc(db, "favorites", `${userId}_${mealId}`), {
+      userId: userId,
+      mealId: mealId,
+      timestamp: serverTimestamp(),
+    })
+    return { success: true }
+  } catch (error) {
+    console.error("Error adding favorite:", error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Remove a meal from user's favorites
+export async function removeFavorite(userId, mealId) {
+  try {
+    await deleteDoc(doc(db, "favorites", `${userId}_${mealId}`))
+    return { success: true }
+  } catch (error) {
+    console.error("Error removing favorite:", error)
+    return { success: false, error: error.message }
+  }
 }
 
 // Get user's favorites
-function getUserFavorites(userId) {
-    return database.ref(`favorites/${userId}`).once("value")
-        .then((snapshot) => {
-            if (!snapshot.exists()) {
-                return [];
-            }
-            
-            const favorites = [];
-            snapshot.forEach((childSnapshot) => {
-                favorites.push({
-                    mealId: childSnapshot.val().mealId,
-                    addedAt: childSnapshot.val().addedAt
-                });
-            });
-            
-            return favorites;
-        })
-        .catch((error) => {
-            console.error("Error getting favorites:", error);
-            return [];
-        });
+export async function getUserFavorites(userId) {
+  try {
+    const favoritesQuery = query(collection(db, "favorites"), where("userId", "==", userId))
+    const favoritesSnapshot = await getDocs(favoritesQuery)
+
+    const favorites = []
+    favoritesSnapshot.forEach((doc) => {
+      favorites.push(doc.data())
+    })
+
+    return favorites
+  } catch (error) {
+    console.error("Error getting favorites:", error)
+    return []
+  }
 }
 
-// Check if meal is in favorites
-function checkIfFavorite(userId, mealId) {
-    return database.ref(`favorites/${userId}/${mealId}`).once("value")
-        .then((snapshot) => {
-            return snapshot.exists();
-        })
-        .catch((error) => {
-            console.error("Error checking favorite:", error);
-            return false;
-        });
-}
-
-// Rate a meal
-function rateMeal(userId, mealId, rating) {
-    return database.ref(`ratings/${userId}/${mealId}`).set({
-        rating: rating,
-        ratedAt: new Date().toISOString()
+// Add rating to Firestore
+export async function addRating(userId, mealId, rating) {
+  try {
+    await setDoc(doc(db, "ratings", `${userId}_${mealId}`), {
+      userId: userId,
+      mealId: mealId,
+      rating: rating,
+      timestamp: serverTimestamp(),
     })
-    .then(() => {
-        return updateAverageRating(mealId);
-    })
-    .then((avgRating) => {
-        return {
-            success: true,
-            message: "Meal rated successfully!",
-            avgRating: avgRating
-        };
-    })
-    .catch((error) => {
-        console.error("Error rating meal:", error);
-        return { success: false, error: error.message };
-    });
+    return { success: true }
+  } catch (error) {
+    console.error("Error adding rating:", error)
+    return { success: false, error: error.message }
+  }
 }
 
 // Get user's rating for a meal
-function getUserRating(userId, mealId) {
-    return database.ref(`ratings/${userId}/${mealId}`).once("value")
-        .then((snapshot) => {
-            if (!snapshot.exists()) {
-                return 0;
-            }
-            return snapshot.val().rating;
-        })
-        .catch((error) => {
-            console.error("Error getting user rating:", error);
-            return 0;
-        });
+export async function getUserRating(userId, mealId) {
+  try {
+    const ratingDoc = await getDoc(doc(db, "ratings", `${userId}_${mealId}`))
+    if (ratingDoc.exists()) {
+      return ratingDoc.data().rating
+    }
+    return 0
+  } catch (error) {
+    console.error("Error getting user rating:", error)
+    return 0
+  }
 }
 
-// Get user's ratings
-function getUserRatings(userId) {
-    return database.ref(`ratings/${userId}`).once("value")
-        .then((snapshot) => {
-            if (!snapshot.exists()) {
-                return [];
-            }
+// Get user's rated meals
+export async function getUserRatings(userId) {
+  try {
+    const ratingsQuery = query(collection(db, "ratings"), where("userId", "==", userId))
+    const ratingsSnapshot = await getDocs(ratingsQuery)
 
-            const ratings = [];
-            snapshot.forEach((childSnapshot) => {
-                ratings.push({
-                    mealId: childSnapshot.key,
-                    rating: childSnapshot.val().rating,
-                    ratedAt: childSnapshot.val().ratedAt
-                });
-            });
+    const ratings = []
+    ratingsSnapshot.forEach((doc) => {
+      ratings.push(doc.data())
+    })
 
-            return ratings;
-        })
-        .catch((error) => {
-            console.error("Error getting user ratings:", error);
-            return [];
-        });
-}
-
-// Update average rating for a meal
-function updateAverageRating(mealId) {
-    return database.ref(`ratings`).once("value")
-        .then((snapshot) => {
-            if (!snapshot.exists()) {
-                return 0;
-            }
-
-            let totalRating = 0;
-            let count = 0;
-
-            snapshot.forEach((userSnapshot) => {
-                const userRatings = userSnapshot.val();
-                if (userRatings[mealId]) {
-                    totalRating += userRatings[mealId].rating;
-                    count++;
-                }
-            });
-
-            const avgRating = count > 0 ? (totalRating / count).toFixed(1) : 0;
-
-            return database.ref(`mealAverageRatings/${mealId}`).set({
-                avgRating: parseFloat(avgRating),
-                ratingCount: count,
-                updatedAt: new Date().toISOString()
-            })
-            .then(() => {
-                return parseFloat(avgRating);
-            });
-        })
-        .catch((error) => {
-            console.error("Error updating average rating:", error);
-            return 0;
-        });
+    return ratings
+  } catch (error) {
+    console.error("Error getting ratings:", error)
+    return []
+  }
 }
 
 // Get average rating for a meal
-function getAverageRating(mealId) {
-    return database.ref(`mealAverageRatings/${mealId}`).once("value")
-        .then((snapshot) => {
-            if (!snapshot.exists()) {
-                return 0;
-            }
-            return snapshot.val().avgRating;
-        })
-        .catch((error) => {
-            console.error("Error getting average rating:", error);
-            return 0;
-        });
+export async function getAverageRating(mealId) {
+  try {
+    const ratingsQuery = query(collection(db, "ratings"), where("mealId", "==", mealId))
+    const ratingsSnapshot = await getDocs(ratingsQuery)
+
+    if (ratingsSnapshot.empty) return 0
+
+    let totalRating = 0
+    let count = 0
+
+    ratingsSnapshot.forEach((doc) => {
+      totalRating += doc.data().rating
+      count++
+    })
+
+    return count > 0 ? (totalRating / count).toFixed(1) : 0
+  } catch (error) {
+    console.error("Error getting average rating:", error)
+    return 0
+  }
 }

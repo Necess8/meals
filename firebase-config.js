@@ -1,21 +1,22 @@
-// firebase-config.js (no import, uses global firebase from script tags)
+// firebase-config.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Your Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCXNL0Ej13pnDdCjvgSD6qx100R4miE8vU",
+  apiKey: "AIzaSyCXNL0Ej13pnDdCjvgSD6qxl00R4miE0vU",
   authDomain: "meals-db-9a613.firebaseapp.com",
-  databaseURL: "https://meals-db-9a613-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "meals-db-9a613",
   storageBucket: "meals-db-9a613.appspot.com",
   messagingSenderId: "275589977323",
-  appId: "1:275589977323:web:113b9eacc2431582709aae",
+  appId: "1:275589977323:web:113b9eacc2431582709aae"
 };
 
-// Initialize Firebase if not already initialized
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+const app = initializeApp(firebaseConfig);
+console.log("Firebase App:", app);  // Should log Firebase app instance
+const auth = getAuth(app);
+console.log("Firebase Auth:", auth); // Should log auth instance
+const db = getFirestore(app);
+console.log("Firestore DB:", db); // Should log Firestore instanc
 
-// Global references (can be used in other script files)
-const database = firebase.database();
-const auth = firebase.auth();
+export { auth, db };

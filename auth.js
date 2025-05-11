@@ -1,95 +1,86 @@
-// auth.js - Authentication functions (for script-based Firebase setup)
-// Register a new user
-function registerUser(username, password) {
-    document.getElementById("registerError").textContent = "Creating account...";
-    document.getElementById("registerError").style.display = "block";
+// auth.js - Updated to fix login functionality while using existing firebase-config.js
+import { auth, db } from "./firebase-config.js"
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
+import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
 
-    const usersRef = database.ref("users");
+// User registration with Firestore integration
+export async function registerUser(username, password) {
+  try {
+    // Create a pseudo email from username (Firebase requires email format)
+    const email = `${username}@mealfinder.example`
 
-    usersRef.orderByChild("username").equalTo(username).once("value")
-        .then(snapshot => {
-            if (snapshot.exists()) {
-                document.getElementById("registerError").textContent = "Username already exists. Please choose another.";
-                return;
-            }
+    // 1. Create auth user
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
-            const newUserRef = usersRef.push();
-            const userId = newUserRef.key;
+    // 2. Create user document in Firestore
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      username: username,
+      email: email,
+      createdAt: serverTimestamp(),
+      lastLogin: serverTimestamp(),
+    })
 
-            newUserRef.set({
-                username: username,
-                password: password,
-                createdAt: new Date().toISOString()
-            })
-            .then(() => {
-                sessionStorage.setItem("user_id", userId);
-                sessionStorage.setItem("username", username);
-                window.location.href = "userpage.html";
-            })
-            .catch(error => {
-                document.getElementById("registerError").textContent = "Error creating account: " + error.message;
-            });
-        })
-        .catch(error => {
-            document.getElementById("registerError").textContent = "Error checking username: " + error.message;
-        });
+    return {
+      success: true,
+      user: userCredential.user,
+    }
+  } catch (error) {
+    console.error("Registration error:", error)
+    return {
+      success: false,
+      error: error.message,
+    }
+  }
 }
 
-// Sign in existing user
-function signIn(username, password) {
-    document.getElementById("loginError").textContent = "Signing in...";
-    document.getElementById("loginError").style.display = "block";
+// User login
+export async function signIn(username, password) {
+  try {
+    // Create a pseudo email from username
+    const email = `${username}@mealfinder.example`
 
-    const usersRef = database.ref("users");
+    const userCredential = await signInWithEmailAndPassword(auth, email, password)
 
-    usersRef.orderByChild("username").equalTo(username).once("value")
-        .then(snapshot => {
-            if (!snapshot.exists()) {
-                document.getElementById("loginError").textContent = "Username not found.";
-                return;
-            }
+    // Update last login time
+    await setDoc(
+      doc(db, "users", userCredential.user.uid),
+      {
+        lastLogin: serverTimestamp(),
+      },
+      { merge: true },
+    )
 
-            let userId = null;
-            let userData = null;
-
-            snapshot.forEach(childSnapshot => {
-                userId = childSnapshot.key;
-                userData = childSnapshot.val();
-            });
-
-            if (userData.password !== password) {
-                document.getElementById("loginError").textContent = "Incorrect password.";
-                return;
-            }
-
-            database.ref(`users/${userId}`).update({
-                lastLogin: new Date().toISOString()
-            });
-
-            sessionStorage.setItem("user_id", userId);
-            sessionStorage.setItem("username", username);
-            window.location.href = "userpage.html";
-        })
-        .catch(error => {
-            document.getElementById("loginError").textContent = "Error signing in: " + error.message;
-        });
+    return { success: true, user: userCredential.user }
+  } catch (error) {
+    console.error("Login error:", error)
+    return { success: false, error: error.message }
+  }
 }
 
 // Sign out
-function signOut() {
-    sessionStorage.removeItem("user_id");
-    sessionStorage.removeItem("username");
-    window.location.href = "index.html";
+export async function signOutUser() {
+  try {
+    await signOut(auth)
+    return { success: true }
+  } catch (error) {
+    console.error("Sign out error:", error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Auth state listener
+export function checkAuthState(callback) {
+  return onAuthStateChanged(auth, (user) => {
+    callback(user)
+  })
 }
 
 // Get current user
-function getCurrentUser() {
-    const userId = sessionStorage.getItem("user_id");
-    const username = sessionStorage.getItem("username");
-
-    if (userId && username) {
-        return { userId, username };
-    }
-
-    return null;
+export function getCurrentUser() {
+  return auth.currentUser
 }
