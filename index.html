@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meal Finder</title>
+    <title>Meal Finder - Login</title>
     <link rel="stylesheet" href="sign.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
-    <!-- Firebase SDK (No CDN links) -->
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
 </head>
 <body>
     <!-- Navbar -->
@@ -14,7 +19,7 @@
         <h1 class="logo"><i class="ri-bowl-line"></i><span></span>Meal Finder</h1>
         <ul class="nav-link">
             <li class="active"><a href="index.html">Home</a></li>
-            <li class="active"><a href="about.html">About Us</a></li>
+            <li><a href="about.html">About Us</a></li>
         </ul>
         <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
     </nav>
@@ -28,7 +33,7 @@
                 <div class="line"></div>
                 <div class="error-message" id="loginError"></div>
                 <div class="input-box">
-                    <input type="text" id="loginUsername" name="username" placeholder="Username" required maxlength="15" pattern="^\S{1,15}$">
+                    <input type="text" id="loginUsername" name="username" placeholder="Username" required maxlength="15">
                     <i class="ri-user-3-fill"></i>
                 </div>
                 <div class="input-box">
@@ -47,7 +52,7 @@
                 <div class="line"></div>
                 <div class="error-message" id="registerError"></div>
                 <div class="input-box">
-                    <input type="text" id="registerUsername" name="username" placeholder="Username" required maxlength="15" pattern="^\S{1,15}$">
+                    <input type="text" id="registerUsername" name="username" placeholder="Username" required maxlength="15">
                     <i class="ri-user-3-fill"></i>
                 </div>
                 <div class="input-box">
@@ -55,7 +60,7 @@
                     <i class="ri-lock-password-line"></i>
                 </div>
 
-                <button type="submit" class="btn reg-btn">Register</button>
+                <button type="submit" class="reg-btn">Register</button>
             </form>
         </div>
 
@@ -64,44 +69,22 @@
             <div class="toggle-panel toggle-left">
                 <h1>Welcome to Meal Finder!</h1>
                 <p>Don't have an account?</p>
-                <button class="btn registerr-btn">Register</button>
+                <button class="registerr-btn">Register</button>
             </div>
         </div>
         <div class="toggle-box">
             <div class="toggle-panel toggle-right">
                 <h1>Welcome back!</h1>
                 <p>Already have an account?</p>
-                <button class="btn loginn-btn">Sign In</button>
+                <button class="loginn-btn">Sign In</button>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from './node_modules/firebase/app.js';
-        import { getAuth } from './node_modules/firebase/auth.js';
-        import { getFirestore } from './node_modules/firebase/firestore.js';
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCXNL0Ej13pnDdCjvgSD6qxl00R4miE0vU",
-            authDomain: "meals-db-9a613.firebaseapp.com",
-            projectId: "meals-db-9a613",
-            storageBucket: "meals-db-9a613.appspot.com",
-            messagingSenderId: "275589977323",
-            appId: "1:275589977323:web:113b9eacc2431582709aae"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        window.firebaseApp = app;
-        window.firebaseAuth = auth;
-        window.firebaseDb = db;
-    </script>
-
-    <script src="script.js" type="module"></script>
-    <script src="auth.js" type="module"></script>
-    <script type="module" src="index.js"></script>
+    <!-- Firebase Initialization and Auth/DB Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="firebase-db.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

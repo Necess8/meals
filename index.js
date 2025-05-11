@@ -1,85 +1,90 @@
 // index.js
-import { registerUser, signIn, checkAuthState } from "./auth.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Check if user is already logged in
-  checkAuthState((user) => {
+  firebase.auth().onAuthStateChanged((user) => {
     if (user) {
-      window.location.href = "userpage.html";
+      window.location.href = "userpage.html"; // Redirect to user page if logged in
     }
   });
 
-  // Form tab switching
-  const loginTab = document.getElementById("loginTab");
-  const registerTab = document.getElementById("registerTab");
-  const loginForm = document.getElementById("loginForm");
-  const registerForm = document.getElementById("registerForm");
+  // Toggle between login and register forms
+  const container = document.querySelector(".container");
+  const registerBtn = document.querySelector(".registerr-btn");
+  const loginBtn = document.querySelector(".loginn-btn");
 
-  loginTab.addEventListener("click", () => {
-    loginTab.classList.add("active");
-    registerTab.classList.remove("active");
-    loginForm.style.display = "block";
-    registerForm.style.display = "none";
-  });
+  if (registerBtn && loginBtn && container) {
+    registerBtn.addEventListener("click", () => {
+      container.classList.add("active");
+    });
 
-  registerTab.addEventListener("click", () => {
-    registerTab.classList.add("active");
-    loginTab.classList.remove("active");
-    registerForm.style.display = "block";
-    loginForm.style.display = "none";
-  });
+    loginBtn.addEventListener("click", () => {
+      container.classList.remove("active");
+    });
+  }
 
   // Login form submission
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = document.getElementById("loginUsername").value;
-    const password = document.getElementById("loginPassword").value;
-    const errorElement = document.getElementById("loginError");
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+      const errorElement = document.getElementById("loginError");
 
-    try {
-      errorElement.textContent = "Logging in...";
-      const result = await signIn(email, password);
-      if (result.success) {
-        window.location.href = "userpage.html";
-      } else {
-        errorElement.textContent = result.error || "Login failed. Please try again.";
+      if (errorElement) errorElement.style.display = "block";
+
+      try {
+        if (errorElement) errorElement.textContent = "Logging in...";
+        firebase.auth().signInWithEmailAndPassword(email, password)
+          .then(() => {
+            window.location.href = "userpage.html"; // Redirect to user page on successful login
+          })
+          .catch((error) => {
+            if (errorElement) errorElement.textContent = error.message || "Login failed. Please try again.";
+          });
+      } catch (error) {
+        console.error("Login error:", error);
+        if (errorElement) errorElement.textContent = "An unexpected error occurred. Please try again.";
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      errorElement.textContent = "An unexpected error occurred. Please try again.";
-    }
-  });
+    });
+  }
 
   // Register form submission
-  registerForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  const registerForm = document.getElementById("registerForm");
+  if (registerForm) {
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    const username = document.getElementById("registerUsername").value;
-    const password = document.getElementById("registerPassword").value;
-    const errorElement = document.getElementById("registerError");
+      const email = document.getElementById("registerUsername").value;
+      const password = document.getElementById("registerPassword").value;
+      const errorElement = document.getElementById("registerError");
 
-    if (username.length < 3) {
-      errorElement.textContent = "Username must be at least 3 characters long.";
-      return;
-    }
+      if (errorElement) errorElement.style.display = "block";
 
-    if (password.length < 6) {
-      errorElement.textContent = "Password must be at least 6 characters long.";
-      return;
-    }
-
-    try {
-      errorElement.textContent = "Creating account...";
-      const result = await registerUser(username, password);
-
-      if (result.success) {
-        window.location.href = "userpage.html";
-      } else {
-        errorElement.textContent = result.error || "Registration failed. Please try again.";
+      if (!email.includes("@")) {
+        if (errorElement) errorElement.textContent = "Please enter a valid email address.";
+        return;
       }
-    } catch (error) {
-      console.error("Registration error:", error);
-      errorElement.textContent = "An unexpected error occurred. Please try again.";
-    }
-  });
+
+      if (password.length < 6) {
+        if (errorElement) errorElement.textContent = "Password must be at least 6 characters long.";
+        return;
+      }
+
+      try {
+        if (errorElement) errorElement.textContent = "Creating account...";
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+          .then(() => {
+            window.location.href = "userpage.html"; // Redirect to user page on successful registration
+          })
+          .catch((error) => {
+            if (errorElement) errorElement.textContent = error.message || "Registration failed. Please try again.";
+          });
+      } catch (error) {
+        console.error("Registration error:", error);
+        if (errorElement) errorElement.textContent = "An unexpected error occurred. Please try again.";
+      }
+    });
+  }
 });
