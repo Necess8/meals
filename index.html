@@ -6,6 +6,7 @@
     <title>Meal Finder</title>
     <link rel="stylesheet" href="sign.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
+    <!-- Firebase SDK (No CDN links) -->
 </head>
 <body>
     <!-- Navbar -->
@@ -27,14 +28,14 @@
                 <div class="line"></div>
                 <div class="error-message" id="loginError"></div>
                 <div class="input-box">
-                    <input type="text" name="username" placeholder="Username" required 
-                           maxlength="15" pattern="^\S{1,15}$" title="No spaces. Max 15 characters.">
+                    <input type="text" id="loginUsername" name="username" placeholder="Username" required maxlength="15" pattern="^\S{1,15}$">
                     <i class="ri-user-3-fill"></i>
                 </div>
                 <div class="input-box">
-                    <input type="password" name="password" placeholder="Password" required>
+                    <input type="password" id="loginPassword" name="password" placeholder="Password" required>
                     <i class="ri-lock-password-line"></i>
                 </div>
+
                 <button type="submit" class="login-btn">Sign In</button>
             </form>
         </div>
@@ -46,14 +47,14 @@
                 <div class="line"></div>
                 <div class="error-message" id="registerError"></div>
                 <div class="input-box">
-                    <input type="text" name="username" placeholder="Username" required 
-                           maxlength="15" pattern="^\S{1,15}$" title="No spaces. Max 15 characters.">
+                    <input type="text" id="registerUsername" name="username" placeholder="Username" required maxlength="15" pattern="^\S{1,15}$">
                     <i class="ri-user-3-fill"></i>
                 </div>
                 <div class="input-box">
-                    <input type="password" name="password" placeholder="Password" required>
+                    <input type="password" id="registerPassword" name="password" placeholder="Password" required>
                     <i class="ri-lock-password-line"></i>
                 </div>
+
                 <button type="submit" class="btn reg-btn">Register</button>
             </form>
         </div>
@@ -75,84 +76,32 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check for URL parameters for errors
-            const urlParams = new URLSearchParams(window.location.search);
-            const error = urlParams.get('error');
-            const type = urlParams.get('type');
-            
-            if (error && type === 'login') {
-                const loginError = document.getElementById('loginError');
-                loginError.textContent = error;
-                loginError.style.display = 'block';
-                loginError.style.color = '#ff3333';
-            } else if (error && type === 'register') {
-                const registerError = document.getElementById('registerError');
-                registerError.textContent = error;
-                registerError.style.display = 'block';
-                registerError.style.color = '#ff3333';
-                // Activate register form
-                document.querySelector('.container').classList.add('active');
-            }
-            
-            // Handle login form submission
-            document.getElementById('loginForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                
-                fetch('login.php', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        const loginError = document.getElementById('loginError');
-                        loginError.textContent = data.error;
-                        loginError.style.display = 'block';
-                        loginError.style.color = '#ff3333';
-                    } else {
-                        window.location.href = 'userpage.html';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            });
-            
-            // Handle register form submission
-            document.getElementById('registerForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                
-                fetch('register.php', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        const registerError = document.getElementById('registerError');
-                        registerError.textContent = data.error;
-                        registerError.style.display = 'block';
-                        registerError.style.color = '#ff3333';
-                    } else {
-                        window.location.href = 'userpage.html';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            });
-        });
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from './node_modules/firebase/app.js';
+        import { getAuth } from './node_modules/firebase/auth.js';
+        import { getFirestore } from './node_modules/firebase/firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXNL0Ej13pnDdCjvgSD6qxl00R4miE0vU",
+            authDomain: "meals-db-9a613.firebaseapp.com",
+            projectId: "meals-db-9a613",
+            storageBucket: "meals-db-9a613.appspot.com",
+            messagingSenderId: "275589977323",
+            appId: "1:275589977323:web:113b9eacc2431582709aae"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
     </script>
+
+    <script src="script.js" type="module"></script>
+    <script src="auth.js" type="module"></script>
+    <script type="module" src="index.js"></script>
 </body>
 </html>

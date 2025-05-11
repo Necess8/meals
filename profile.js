@@ -1,238 +1,163 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // Display username in navbar
-  const usernameDisplay = document.getElementById('usernameDisplay');
-  if (usernameDisplay) {
-    fetch('get-username.php')
-      .then(response => response.json())
-      .then(data => {
-        if (data.username) {
-          usernameDisplay.textContent = data.username;
-        }
-      })
-      .catch(error => console.error('Error fetching username:', error));
-  }
+import { getCurrentUser } from "./auth.js"
+import { getUserFavorites, getUserRatings, removeFavorite, rateMeal, getUserRating } from "./firebase-db.js"
 
-  const menuTog = document.querySelector('.menuTog');
-  const menuLinks = document.querySelector('.navbar-links');
+// DOM elements
+const favoritesMealsContainer = document.getElementById("favorite-meals")
+const ratedMealsContainer = document.getElementById("rated-meals")
+const noFavoritesMessage = document.getElementById("no-favorites")
+const noRatingsMessage = document.getElementById("no-ratings")
+const profileMealDetailModal = document.getElementById("profileMealDetailModal")
+const profileMealDetailContent = document.getElementById("profileMealDetailContent")
+const closeProfileModalBtn = document.querySelector(".close-profile-modal")
+const removeFromFavoritesBtn = document.getElementById("profile-remove-favorite")
+const watchVideoBtn = document.getElementById("profile-watch-video")
+const searchInput = document.getElementById("searchInput")
+const searchBtn = document.getElementById("searchBtn")
 
-  if (menuTog && menuLinks) {
-    menuTog.addEventListener('click', () => {
-      menuLinks.style.display = menuLinks.style.display === 'block' ? 'none' : 'block';
-    });
-  }
-
-  // Load user's favorite meals
-  loadFavoriteMeals();
-
-  // Load user's rated meals
-  loadRatedMeals();
-
-  // Set up search functionality
-  const searchBtn = document.getElementById("searchBtn");
-  const searchInput = document.getElementById("searchInput");
-
-  if (searchBtn && searchInput) {
-    searchBtn.addEventListener("click", performSearch);
-    searchInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        performSearch();
-      }
-    });
-  }
-
-  // Clear search input if coming from another page
-  if (searchInput && !window.location.search.includes('search=')) {
-    searchInput.value = '';
-  }
-
-  // Close modal when clicking the close button or outside the modal
-  document.addEventListener("click", (e) => {
-    const profileMealDetailModal = document.getElementById("profileMealDetailModal");
-
-    if (e.target.classList.contains("close-profile-modal")) {
-      profileMealDetailModal.style.display = "none";
+// Initialize profile page
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    // Check if user is logged in
+    const user = await getCurrentUser()
+    if (!user) {
+      window.location.href = "index.html"
+      return
     }
 
-    if (e.target === profileMealDetailModal) {
-      profileMealDetailModal.style.display = "none";
+    // Display username
+    const usernameDisplay = document.getElementById("usernameDisplay")
+    if (usernameDisplay) {
+      usernameDisplay.textContent = user.displayName || user.email
     }
-  });
-});
 
-// API Functions
-async function fetchMealById(id) {
-  try {
-    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
-    const data = await response.json();
-    return data.meals ? data.meals[0] : null;
+    // Load user's favorite meals
+    loadFavoriteMeals(user.uid)
+
+    // Load user's rated meals
+    loadRatedMeals(user.uid)
+
+    // Set up event listeners
+    setupEventListeners()
   } catch (error) {
-    console.error("Error fetching meal details:", error);
-    return null;
+    console.error("Error initializing profile page:", error)
   }
-}
+})
 
-async function fetchMealsByName(name) {
+// Load user's favorite meals
+async function loadFavoriteMeals(userId) {
   try {
-    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${name}`);
-    const data = await response.json();
-    return data.meals || [];
-  } catch (error) {
-    console.error("Error fetching meals by name:", error);
-    return [];
-  }
-}
+    if (!favoritesMealsContainer) return
 
-// Get user's favorites
-async function getFavorites() {
-  try {
-    const response = await fetch("get-favorites.php");
-    const data = await response.json();
-    return data.favorites || [];
-  } catch (error) {
-    console.error("Error getting favorites:", error);
-    return [];
-  }
-}
+    // Show loading state
+    favoritesMealsContainer.innerHTML = `
+      <div class="meal-card skeleton-loader"></div>
+      <div class="meal-card skeleton-loader"></div>
+      <div class="meal-card skeleton-loader"></div>
+    `
 
-// Get user's ratings
-async function getRatings() {
-  try {
-    const response = await fetch("get-ratings.php");
-    const data = await response.json();
-    return data.ratings || [];
-  } catch (error) {
-    console.error("Error getting ratings:", error);
-    return [];
-  }
-}
-
-// Get user's rating for a meal
-async function getUserRating(mealId) {
-  try {
-    const response = await fetch(`get-rating.php?meal_id=${mealId}`);
-    const data = await response.json();
-    return data.rating || 0;
-  } catch (error) {
-    console.error("Error getting user rating:", error);
-    return 0;
-  }
-}
-
-// Get average rating for a meal
-async function getAverageRating(mealId) {
-  try {
-    const response = await fetch(`get-average-rating.php?meal_id=${mealId}`);
-    const data = await response.json();
-    return data.avgRating || 0;
-  } catch (error) {
-    console.error("Error getting average rating:", error);
-    return 0;
-  }
-}
-
-// Helper function to generate rating stars HTML
-function generateRatingStars(rating) {
-  let starsHTML = '';
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
-  
-  for (let i = 1; i <= 5; i++) {
-    if (i <= fullStars) {
-      starsHTML += '<i class="ri-poker-hearts-fill"></i>';
-    } else if (i === fullStars + 1 && hasHalfStar) {
-      starsHTML += '<i class="ri-poker-hearts-fill half"></i>';
-    } else {
-      starsHTML += '<i class="ri-poker-hearts-line"></i>';
-    }
-  }
-  
-  return starsHTML;
-}
-
-// Load favorite meals
-async function loadFavoriteMeals() {
-  const favoriteMealsContainer = document.getElementById("favorite-meals");
-  const noFavorites = document.getElementById("no-favorites");
-  
-  if (!favoriteMealsContainer || !noFavorites) return;
-
-  favoriteMealsContainer.innerHTML = ""; // Clear skeleton loaders
-
-  try {
-    const favorites = await getFavorites();
+    // Get user's favorites
+    const favorites = await getUserFavorites(userId)
 
     if (favorites.length === 0) {
-      favoriteMealsContainer.style.display = "none";
-      noFavorites.style.display = "block";
-      return;
-    }
-
-    noFavorites.style.display = "none";
-    favoriteMealsContainer.style.display = "grid";
-
-    for (const mealId of favorites) {
-      const meal = await fetchMealById(mealId);
-      if (meal) {
-        // Get average rating
-        const avgRating = await getAverageRating(mealId);
-        meal.avgRating = avgRating;
-        
-        const mealCard = createMealCard(meal, true);
-        favoriteMealsContainer.appendChild(mealCard);
+      favoritesMealsContainer.innerHTML = ""
+      if (noFavoritesMessage) {
+        noFavoritesMessage.style.display = "block"
       }
+      return
     }
+
+    // Hide no favorites message
+    if (noFavoritesMessage) {
+      noFavoritesMessage.style.display = "none"
+    }
+
+    // Fetch meal details for each favorite
+    const mealPromises = favorites.map(async (favorite) => {
+      const mealData = await fetchMealById(favorite.mealId)
+      if (mealData) {
+        // Get user's rating for this meal
+        const userRating = await getUserRating(userId, favorite.mealId)
+        mealData.userRating = userRating
+        return mealData
+      }
+      return null
+    })
+
+    const meals = (await Promise.all(mealPromises)).filter((meal) => meal !== null)
+
+    // Display favorite meals
+    favoritesMealsContainer.innerHTML = ""
+    meals.forEach((meal) => {
+      const mealCard = createMealCard(meal, true)
+      favoritesMealsContainer.appendChild(mealCard)
+    })
   } catch (error) {
-    console.error("Error loading favorite meals:", error);
-    favoriteMealsContainer.innerHTML = "<p>Error loading favorite meals. Please try again.</p>";
+    console.error("Error loading favorite meals:", error)
+    favoritesMealsContainer.innerHTML = "<p>Error loading favorite meals. Please try again.</p>"
   }
 }
 
-// Load rated meals
-async function loadRatedMeals() {
-  const ratedMealsContainer = document.getElementById("rated-meals");
-  const noRatings = document.getElementById("no-ratings");
-  
-  if (!ratedMealsContainer || !noRatings) return;
-
-  ratedMealsContainer.innerHTML = ""; // Clear skeleton loaders
-
+// Load user's rated meals
+async function loadRatedMeals(userId) {
   try {
-    const ratings = await getRatings();
+    if (!ratedMealsContainer) return
+
+    // Show loading state
+    ratedMealsContainer.innerHTML = `
+      <div class="meal-card skeleton-loader"></div>
+      <div class="meal-card skeleton-loader"></div>
+      <div class="meal-card skeleton-loader"></div>
+    `
+
+    // Get user's ratings
+    const ratings = await getUserRatings(userId)
 
     if (ratings.length === 0) {
-      ratedMealsContainer.style.display = "none";
-      noRatings.style.display = "block";
-      return;
-    }
-
-    noRatings.style.display = "none";
-    ratedMealsContainer.style.display = "grid";
-
-    for (const rating of ratings) {
-      const meal = await fetchMealById(rating.meal_id);
-      if (meal) {
-        // Get average rating
-        const avgRating = await getAverageRating(rating.meal_id);
-        meal.avgRating = avgRating;
-        
-        const mealCard = createMealCard(meal, false, rating.rating);
-        ratedMealsContainer.appendChild(mealCard);
+      ratedMealsContainer.innerHTML = ""
+      if (noRatingsMessage) {
+        noRatingsMessage.style.display = "block"
       }
+      return
     }
+
+    // Hide no ratings message
+    if (noRatingsMessage) {
+      noRatingsMessage.style.display = "none"
+    }
+
+    // Fetch meal details for each rated meal
+    const mealPromises = ratings.map(async (rating) => {
+      const mealData = await fetchMealById(rating.mealId)
+      if (mealData) {
+        mealData.userRating = rating.rating
+        return mealData
+      }
+      return null
+    })
+
+    const meals = (await Promise.all(mealPromises)).filter((meal) => meal !== null)
+
+    // Sort by rating (highest first)
+    meals.sort((a, b) => b.userRating - a.userRating)
+
+    // Display rated meals
+    ratedMealsContainer.innerHTML = ""
+    meals.forEach((meal) => {
+      const mealCard = createMealCard(meal, false)
+      ratedMealsContainer.appendChild(mealCard)
+    })
   } catch (error) {
-    console.error("Error loading rated meals:", error);
-    ratedMealsContainer.innerHTML = "<p>Error loading rated meals. Please try again.</p>";
+    console.error("Error loading rated meals:", error)
+    ratedMealsContainer.innerHTML = "<p>Error loading rated meals. Please try again.</p>"
   }
 }
 
 // Create meal card
-function createMealCard(meal, isFavorite = false, userRating = 0) {
-  const card = document.createElement("div");
-  card.className = "meal-card";
-  card.dataset.id = meal.idMeal;
-
-  // Get the average rating
-  const avgRating = meal.avgRating || 0;
+function createMealCard(meal, isFavorite) {
+  const card = document.createElement("div")
+  card.className = "meal-card"
+  card.dataset.id = meal.idMeal
+  card.dataset.isFavorite = isFavorite
 
   card.innerHTML = `
     <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
@@ -241,150 +166,98 @@ function createMealCard(meal, isFavorite = false, userRating = 0) {
       <p>${meal.strCategory || "Category not available"}</p>
       
       <div class="rating-container">
-        <div class="avg-rating" title="Average rating: ${avgRating}">
-          <span class="avg-rating-label">Avg: ${avgRating}</span>
-          <div class="avg-rating-stars">
-            ${generateRatingStars(avgRating)}
-          </div>
-        </div>
-        
-        <div class="meal-rating" data-meal-id="${meal.idMeal}" data-user-rating="${userRating}">
+        <div class="user-rating" data-meal-id="${meal.idMeal}" data-user-rating="${meal.userRating || 0}">
           <span class="your-rating-label">Your rating:</span>
-          <i class="ri-poker-hearts-${userRating >= 1 ? 'fill' : 'line'}" data-rating="1"></i>
-          <i class="ri-poker-hearts-${userRating >= 2 ? 'fill' : 'line'}" data-rating="2"></i>
-          <i class="ri-poker-hearts-${userRating >= 3 ? 'fill' : 'line'}" data-rating="3"></i>
-          <i class="ri-poker-hearts-${userRating >= 4 ? 'fill' : 'line'}" data-rating="4"></i>
-          <i class="ri-poker-hearts-${userRating >= 5 ? 'fill' : 'line'}" data-rating="5"></i>
+          <div class="stars">
+            ${generateRatingStars(meal.userRating || 0)}
+          </div>
         </div>
       </div>
       
       <div class="meal-card-actions">
         <button class="view-recipe" data-id="${meal.idMeal}">View Recipe</button>
-        <button class="view-ingredients" data-id="${meal.idMeal}">Ingredients</button>
-        ${isFavorite ? 
-          `<button class="remove-favorite" data-id="${meal.idMeal}"><i class="ri-heart-fill"></i></button>` : 
-          `<button class="add-favorite" data-id="${meal.idMeal}"><i class="ri-heart-line"></i></button>`
+        ${
+          isFavorite
+            ? `<button class="remove-favorite" data-id="${meal.idMeal}"><i class="ri-heart-fill"></i> Remove</button>`
+            : `<button class="view-ingredients" data-id="${meal.idMeal}">Ingredients</button>`
         }
       </div>
     </div>
-  `;
+  `
 
   // Add event listeners
-  card.addEventListener("click", () => showMealDetail(meal.idMeal));
+  card.addEventListener("click", () => showMealDetail(meal, isFavorite))
 
-  const viewRecipeBtn = card.querySelector(".view-recipe");
-  const viewIngredientsBtn = card.querySelector(".view-ingredients");
-  const favoriteBtn = card.querySelector(".add-favorite, .remove-favorite");
-  const ratingStars = card.querySelectorAll(".meal-rating i");
-
+  const viewRecipeBtn = card.querySelector(".view-recipe")
   viewRecipeBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    showMealDetail(meal.idMeal, "recipe");
-  });
+    e.stopPropagation()
+    showMealDetail(meal, isFavorite, "recipe")
+  })
 
-  viewIngredientsBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    showMealDetail(meal.idMeal, "ingredients");
-  });
-
-  if (favoriteBtn) {
-    favoriteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (favoriteBtn.classList.contains("remove-favorite")) {
-        removeFavorite(meal.idMeal);
-      } else {
-        addToFavorites(meal.idMeal);
-      }
-    });
+  if (isFavorite) {
+    const removeFavoriteBtn = card.querySelector(".remove-favorite")
+    removeFavoriteBtn.addEventListener("click", async (e) => {
+      e.stopPropagation()
+      await handleRemoveFavorite(meal.idMeal)
+    })
+  } else {
+    const viewIngredientsBtn = card.querySelector(".view-ingredients")
+    viewIngredientsBtn.addEventListener("click", (e) => {
+      e.stopPropagation()
+      showMealDetail(meal, isFavorite, "ingredients")
+    })
   }
 
   // Set up rating functionality
-  ratingStars.forEach(star => {
-    star.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const rating = parseInt(e.target.dataset.rating);
-      rateMeal(meal.idMeal, rating);
-      updateStarDisplay(card, rating);
-    });
+  const ratingStars = card.querySelectorAll(".user-rating .stars i")
+  ratingStars.forEach((star) => {
+    star.addEventListener("click", async (e) => {
+      e.stopPropagation()
+      const user = await getCurrentUser()
+      if (user) {
+        const rating = Number.parseInt(e.target.dataset.rating)
+        await rateMeal(user.uid, meal.idMeal, rating)
+        updateStarDisplay(card, rating)
+
+        // Reload rated meals to reflect changes
+        loadRatedMeals(user.uid)
+      }
+    })
 
     // Hover effect
     star.addEventListener("mouseover", (e) => {
-      e.stopPropagation();
-      const rating = parseInt(e.target.dataset.rating);
-      const stars = card.querySelectorAll(".meal-rating i");
-      
+      e.stopPropagation()
+      const rating = Number.parseInt(e.target.dataset.rating)
+      const stars = card.querySelectorAll(".user-rating .stars i")
+
       stars.forEach((s, index) => {
         if (index < rating) {
-          s.classList.add("ri-poker-hearts-fill");
-          s.classList.remove("ri-poker-hearts-line");
+          s.classList.add("ri-poker-hearts-fill")
+          s.classList.remove("ri-poker-hearts-line")
         } else {
-          s.classList.add("ri-poker-hearts-line");
-          s.classList.remove("ri-poker-hearts-fill");
+          s.classList.add("ri-poker-hearts-line")
+          s.classList.remove("ri-poker-hearts-fill")
         }
-      });
-    });
+      })
+    })
 
     // Reset on mouseout if not rated
     star.addEventListener("mouseout", (e) => {
-      e.stopPropagation();
-      const currentRating = parseInt(card.querySelector(".meal-rating").dataset.userRating || "0");
-      updateStarDisplay(card, currentRating);
-    });
-  });
+      e.stopPropagation()
+      const currentRating = Number.parseInt(card.querySelector(".user-rating").dataset.userRating || "0")
+      updateStarDisplay(card, currentRating)
+    })
+  })
 
-  return card;
-}
-
-// Update star display
-function updateStarDisplay(container, rating) {
-  const stars = container.querySelectorAll(".meal-rating i");
-  
-  stars.forEach((star, index) => {
-    if (index < rating) {
-      star.classList.add("ri-poker-hearts-fill");
-      star.classList.remove("ri-poker-hearts-line");
-    } else {
-      star.classList.add("ri-poker-hearts-line");
-      star.classList.remove("ri-poker-hearts-fill");
-    }
-  });
-  
-  // Store the current rating
-  container.querySelector(".meal-rating").dataset.userRating = rating;
-}
-
-// Update average rating display
-function updateAverageRatingDisplay(mealId, avgRating) {
-  // Update average rating in all meal cards with this ID
-  document.querySelectorAll(`[data-id="${mealId}"]`).forEach(card => {
-    const avgRatingElement = card.querySelector(".avg-rating");
-    if (avgRatingElement) {
-      avgRatingElement.querySelector(".avg-rating-label").textContent = `Avg: ${avgRating}`;
-      avgRatingElement.title = `Average rating: ${avgRating}`;
-      avgRatingElement.querySelector(".avg-rating-stars").innerHTML = generateRatingStars(avgRating);
-    }
-  });
-  
-  // Update in modal if open
-  const modal = document.getElementById("profileMealDetailModal");
-  if (modal && modal.style.display === "block") {
-    const modalAvgRating = modal.querySelector(".meal-detail-avg-rating");
-    if (modalAvgRating && modalAvgRating.dataset.mealId === mealId) {
-      modalAvgRating.querySelector("p").textContent = `Average Rating: ${avgRating}`;
-      modalAvgRating.querySelector(".stars").innerHTML = generateRatingStars(avgRating);
-    }
-  }
+  return card
 }
 
 // Show meal detail
-async function showMealDetail(id, activeTab = "recipe") {
-  const modal = document.getElementById("profileMealDetailModal");
-  const modalContent = document.getElementById("profileMealDetailContent");
-
-  if (!modal || !modalContent) return;
+async function showMealDetail(meal, isFavorite, activeTab = "recipe") {
+  if (!profileMealDetailModal || !profileMealDetailContent) return
 
   // Show loading state
-  modalContent.innerHTML = `
+  profileMealDetailContent.innerHTML = `
     <div class="meal-detail-skeleton">
       <div class="meal-image skeleton-loader"></div>
       <div class="meal-title skeleton-loader"></div>
@@ -392,39 +265,34 @@ async function showMealDetail(id, activeTab = "recipe") {
       <div class="meal-ingredients skeleton-loader"></div>
       <div class="meal-instructions skeleton-loader"></div>
     </div>
-  `;
+  `
 
-  modal.style.display = "block";
+  profileMealDetailModal.style.display = "block"
 
   try {
-    const meal = await fetchMealById(id);
-    if (!meal) {
-      modalContent.innerHTML = "<p>Meal details not found.</p>";
-      return;
-    }
-
     // Get ingredients and measurements
-    const ingredients = [];
+    const ingredients = []
     for (let i = 1; i <= 20; i++) {
-      const ingredient = meal[`strIngredient${i}`];
-      const measure = meal[`strMeasure${i}`];
+      const ingredient = meal[`strIngredient${i}`]
+      const measure = meal[`strMeasure${i}`]
 
       if (ingredient && ingredient.trim() !== "") {
         ingredients.push({
           name: ingredient,
           measure: measure || "",
-        });
+        })
       }
     }
 
     // Get user's rating
-    const userRating = await getUserRating(id);
-    
-    // Get average rating
-    const avgRating = await getAverageRating(id);
+    const user = await getCurrentUser()
+    let userRating = 0
+    if (user) {
+      userRating = await getUserRating(user.uid, meal.idMeal)
+    }
 
     // Create HTML content
-    modalContent.innerHTML = `
+    profileMealDetailContent.innerHTML = `
       <div class="meal-detail-header">
         <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
         <div class="meal-detail-header-content">
@@ -433,21 +301,14 @@ async function showMealDetail(id, activeTab = "recipe") {
           <p>Origin: ${meal.strArea}</p>
           
           <div class="meal-detail-ratings">
-            <div class="meal-detail-avg-rating" title="Average rating: ${avgRating}" data-meal-id="${meal.idMeal}">
-              <p>Average Rating: ${avgRating}</p>
-              <div class="stars">
-                ${generateRatingStars(avgRating)}
-              </div>
-            </div>
-            
             <div class="meal-detail-rating" data-meal-id="${meal.idMeal}" data-user-rating="${userRating}">
               <p>Your Rating:</p>
               <div class="stars">
-                <i class="ri-poker-hearts-${userRating >= 1 ? 'fill' : 'line'}" data-rating="1"></i>
-                <i class="ri-poker-hearts-${userRating >= 2 ? 'fill' : 'line'}" data-rating="2"></i>
-                <i class="ri-poker-hearts-${userRating >= 3 ? 'fill' : 'line'}" data-rating="3"></i>
-                <i class="ri-poker-hearts-${userRating >= 4 ? 'fill' : 'line'}" data-rating="4"></i>
-                <i class="ri-poker-hearts-${userRating >= 5 ? 'fill' : 'line'}" data-rating="5"></i>
+                <i class="ri-poker-hearts-${userRating >= 1 ? "fill" : "line"}" data-rating="1"></i>
+                <i class="ri-poker-hearts-${userRating >= 2 ? "fill" : "line"}" data-rating="2"></i>
+                <i class="ri-poker-hearts-${userRating >= 3 ? "fill" : "line"}" data-rating="3"></i>
+                <i class="ri-poker-hearts-${userRating >= 4 ? "fill" : "line"}" data-rating="4"></i>
+                <i class="ri-poker-hearts-${userRating >= 5 ? "fill" : "line"}" data-rating="5"></i>
               </div>
             </div>
           </div>
@@ -480,171 +341,233 @@ async function showMealDetail(id, activeTab = "recipe") {
                   <small>${ing.measure}</small>
                 </div>
               </div>
-            `
+            `,
               )
               .join("")}
           </div>
         </div>
       </div>
-    `;
+    `
 
     // Set up tab switching
-    const recipeTab = document.getElementById("profile-recipe-tab");
-    const ingredientsTab = document.getElementById("profile-ingredients-tab");
-    const recipeContent = document.getElementById("profile-recipe-content");
-    const ingredientsContent = document.getElementById("profile-ingredients-content");
+    const recipeTab = document.getElementById("profile-recipe-tab")
+    const ingredientsTab = document.getElementById("profile-ingredients-tab")
+    const recipeContent = document.getElementById("profile-recipe-content")
+    const ingredientsContent = document.getElementById("profile-ingredients-content")
 
-    recipeTab.addEventListener("click", () => {
-      recipeTab.classList.add("active");
-      ingredientsTab.classList.remove("active");
-      recipeContent.style.display = "block";
-      ingredientsContent.style.display = "none";
-    });
+    if (recipeTab && ingredientsTab && recipeContent && ingredientsContent) {
+      recipeTab.addEventListener("click", () => {
+        recipeTab.classList.add("active")
+        ingredientsTab.classList.remove("active")
+        recipeContent.style.display = "block"
+        ingredientsContent.style.display = "none"
+      })
 
-    ingredientsTab.addEventListener("click", () => {
-      ingredientsTab.classList.add("active");
-      recipeTab.classList.remove("active");
-      ingredientsContent.style.display = "block";
-      recipeContent.style.display = "none";
-    });
+      ingredientsTab.addEventListener("click", () => {
+        ingredientsTab.classList.add("active")
+        recipeTab.classList.remove("active")
+        ingredientsContent.style.display = "block"
+        recipeContent.style.display = "none"
+      })
+    }
 
     // Set up rating functionality in modal
-    const ratingStars = modalContent.querySelectorAll(".meal-detail-rating .stars i");
-    ratingStars.forEach(star => {
-      star.addEventListener("click", (e) => {
-        const rating = parseInt(e.target.dataset.rating);
-        rateMeal(meal.idMeal, rating);
-        
-        // Update stars in modal
-        ratingStars.forEach((s, index) => {
-          if (index < rating) {
-            s.classList.add("ri-poker-hearts-fill");
-            s.classList.remove("ri-poker-hearts-line");
-          } else {
-            s.classList.add("ri-poker-hearts-line");
-            s.classList.remove("ri-poker-hearts-fill");
-          }
-        });
-        
-        // Update user rating data attribute
-        modalContent.querySelector(".meal-detail-rating").dataset.userRating = rating;
-      });
-    });
+    const ratingStars = profileMealDetailContent.querySelectorAll(".meal-detail-rating .stars i")
+    ratingStars.forEach((star) => {
+      star.addEventListener("click", async (e) => {
+        if (user) {
+          const rating = Number.parseInt(e.target.dataset.rating)
+          await rateMeal(user.uid, meal.idMeal, rating)
+
+          // Update stars in modal
+          ratingStars.forEach((s, index) => {
+            if (index < rating) {
+              s.classList.add("ri-poker-hearts-fill")
+              s.classList.remove("ri-poker-hearts-line")
+            } else {
+              s.classList.add("ri-poker-hearts-line")
+              s.classList.remove("ri-poker-hearts-fill")
+            }
+          })
+
+          // Update user rating data attribute
+          profileMealDetailContent.querySelector(".meal-detail-rating").dataset.userRating = rating
+
+          // Reload rated meals to reflect changes
+          loadRatedMeals(user.uid)
+        } else {
+          alert("Please log in to rate meals.")
+        }
+      })
+    })
 
     // Set up watch video button
-    const watchVideoBtn = document.getElementById("profile-watch-video");
     if (watchVideoBtn) {
       if (meal.strYoutube) {
         watchVideoBtn.addEventListener("click", () => {
-          window.open(meal.strYoutube, "_blank");
-        });
-        watchVideoBtn.style.display = "block";
+          window.open(meal.strYoutube, "_blank")
+        })
+        watchVideoBtn.style.display = "block"
       } else {
-        watchVideoBtn.style.display = "none";
+        watchVideoBtn.style.display = "none"
       }
     }
 
     // Set up remove from favorites button
-    const removeFavoriteBtn = document.getElementById("profile-remove-favorite");
-    if (removeFavoriteBtn) {
-      removeFavoriteBtn.dataset.id = meal.idMeal;
-      removeFavoriteBtn.addEventListener("click", () => {
-        removeFavorite(meal.idMeal);
-        modal.style.display = "none";
-      });
+    if (removeFromFavoritesBtn) {
+      if (isFavorite) {
+        removeFromFavoritesBtn.dataset.id = meal.idMeal
+        removeFromFavoritesBtn.style.display = "block"
+
+        // Clear previous event listeners
+        const newRemoveBtn = removeFromFavoritesBtn.cloneNode(true)
+        removeFromFavoritesBtn.parentNode.replaceChild(newRemoveBtn, removeFromFavoritesBtn)
+
+        // Add new event listener
+        newRemoveBtn.addEventListener("click", async () => {
+          await handleRemoveFavorite(meal.idMeal)
+          profileMealDetailModal.style.display = "none"
+        })
+      } else {
+        removeFromFavoritesBtn.style.display = "none"
+      }
     }
   } catch (error) {
-    console.error("Error showing meal details:", error);
-    modalContent.innerHTML = "<p>Error loading meal details. Please try again.</p>";
+    console.error("Error showing meal details:", error)
+    profileMealDetailContent.innerHTML = "<p>Error loading meal details. Please try again.</p>"
   }
 }
 
-// Rate meal
-async function rateMeal(mealId, rating) {
+// Handle remove favorite
+async function handleRemoveFavorite(mealId) {
   try {
-    const response = await fetch("rate-meal.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `meal_id=${mealId}&rating=${rating}`,
-    });
-
-    const result = await response.json();
-    
-    // If we have an average rating in the response, update it on the page
-    if (result.avgRating) {
-      updateAverageRatingDisplay(mealId, result.avgRating);
+    const user = await getCurrentUser()
+    if (!user) {
+      alert("Please log in to manage favorites.")
+      return
     }
-    
-    // Reload rated meals to reflect changes
-    loadRatedMeals();
+
+    const confirmed = confirm("Are you sure you want to remove this meal from your favorites?")
+    if (!confirmed) return
+
+    await removeFavorite(user.uid, mealId)
+
+    // Reload favorites to reflect changes
+    loadFavoriteMeals(user.uid)
+
+    // Close modal if open
+    if (profileMealDetailModal && profileMealDetailModal.style.display === "block") {
+      profileMealDetailModal.style.display = "none"
+    }
   } catch (error) {
-    console.error("Error rating meal:", error);
-    alert("Error rating meal. Please try again.");
+    console.error("Error removing favorite:", error)
+    alert("Error removing favorite. Please try again.")
   }
 }
 
-// Add to favorites
-async function addToFavorites(mealId) {
+// Set up event listeners
+function setupEventListeners() {
+  // Close modal
+  if (closeProfileModalBtn) {
+    closeProfileModalBtn.addEventListener("click", () => {
+      profileMealDetailModal.style.display = "none"
+    })
+  }
+
+  // Close modal when clicking outside
+  window.addEventListener("click", (e) => {
+    if (e.target === profileMealDetailModal) {
+      profileMealDetailModal.style.display = "none"
+    }
+  })
+
+  // Search functionality
+  if (searchBtn && searchInput) {
+    searchBtn.addEventListener("click", () => {
+      const query = searchInput.value.trim()
+      if (query) {
+        window.location.href = `userpage.html?search=${encodeURIComponent(query)}`
+      }
+    })
+
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        const query = searchInput.value.trim()
+        if (query) {
+          window.location.href = `userpage.html?search=${encodeURIComponent(query)}`
+        }
+      }
+    })
+  }
+
+  // Sign out button
+  const signOutBtn = document.getElementById("signOutBtn")
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", async (e) => {
+      e.preventDefault()
+      try {
+        // Import the signOut function from auth.js
+        const { signOut } = await import("./auth.js")
+        await signOut()
+        window.location.href = "index.html"
+      } catch (error) {
+        console.error("Error signing out:", error)
+      }
+    })
+  }
+
+  // Mobile menu
+  const menuBtn = document.querySelector(".menuBtn")
+  const navLinks = document.querySelector(".nav-link")
+
+  if (menuBtn && navLinks) {
+    menuBtn.addEventListener("click", () => {
+      navLinks.classList.toggle("active")
+    })
+  }
+}
+
+// Helper function to generate rating stars HTML
+function generateRatingStars(rating) {
+  let starsHTML = ""
+
+  for (let i = 1; i <= 5; i++) {
+    if (i <= rating) {
+      starsHTML += `<i class="ri-poker-hearts-fill" data-rating="${i}"></i>`
+    } else {
+      starsHTML += `<i class="ri-poker-hearts-line" data-rating="${i}"></i>`
+    }
+  }
+
+  return starsHTML
+}
+
+// Update star display
+function updateStarDisplay(container, rating) {
+  const stars = container.querySelectorAll(".user-rating .stars i")
+
+  stars.forEach((star, index) => {
+    if (index < rating) {
+      star.classList.add("ri-poker-hearts-fill")
+      star.classList.remove("ri-poker-hearts-line")
+    } else {
+      star.classList.add("ri-poker-hearts-line")
+      star.classList.remove("ri-poker-hearts-fill")
+    }
+  })
+
+  // Store the current rating
+  container.querySelector(".user-rating").dataset.userRating = rating
+}
+
+// Fetch meal by ID
+async function fetchMealById(id) {
   try {
-    const response = await fetch("add-favorite.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `meal_id=${mealId}`,
-    });
-
-    const result = await response.text();
-    alert(result);
-    
-    // Reload favorite meals to reflect changes
-    loadFavoriteMeals();
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`)
+    const data = await response.json()
+    return data.meals ? data.meals[0] : null
   } catch (error) {
-    console.error("Error adding to favorites:", error);
-    alert("Error adding to favorites. Please try again.");
+    console.error("Error fetching meal details:", error)
+    return null
   }
-}
-
-// Remove from favorites
-async function removeFavorite(mealId) {
-  try {
-    const response = await fetch("remove-favorite.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `meal_id=${mealId}`,
-    });
-
-    const result = await response.text();
-    alert(result);
-    
-    // Reload favorite meals to reflect changes
-    loadFavoriteMeals();
-  } catch (error) {
-    console.error("Error removing from favorites:", error);
-    alert("Error removing from favorites. Please try again.");
-  }
-}
-
-// Search functionality
-async function performSearch() {
-  const searchInput = document.getElementById("searchInput");
-  const query = searchInput.value.trim();
-  if (!query) return;
-  
-  // Redirect to userpage with search parameter
-  window.location.href = `userpage.html?search=${encodeURIComponent(query)}`;
-}
-
-// Handle menu button for mobile
-const menuBtn = document.querySelector(".menuBtn");
-const navlink = document.querySelector(".nav-link");
-
-if (menuBtn && navlink) {
-  menuBtn.addEventListener("click", () => {
-    navlink.classList.toggle("mobile-menu");
-  });
 }
