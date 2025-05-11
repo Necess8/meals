@@ -76,32 +76,12 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from './node_modules/firebase/app.js';
-        import { getAuth } from './node_modules/firebase/auth.js';
-        import { getFirestore } from './node_modules/firebase/firestore.js';
+    <script src="/script.js" type="module"></script>
+    <script type="module" src="/index.js"></script>
+    <script src="/auth.js" type="module"></script>
+    <script src="/firebase-db.js" type="module"></script>
+    <script src="/test.js" type="module"></script>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCXNL0Ej13pnDdCjvgSD6qxl00R4miE0vU",
-            authDomain: "meals-db-9a613.firebaseapp.com",
-            projectId: "meals-db-9a613",
-            storageBucket: "meals-db-9a613.appspot.com",
-            messagingSenderId: "275589977323",
-            appId: "1:275589977323:web:113b9eacc2431582709aae"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        window.firebaseApp = app;
-        window.firebaseAuth = auth;
-        window.firebaseDb = db;
-    </script>
-
-    <script src="script.js" type="module"></script>
-    <script src="auth.js" type="module"></script>
-    <script type="module" src="index.js"></script>
+    
 </body>
 </html>

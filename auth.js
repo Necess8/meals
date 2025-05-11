@@ -1,39 +1,37 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase-config.js';
+import { 
+    auth, 
+    signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword 
+} from './index.html'; // Import from HTML file
 
-const loginForm = document.getElementById('loginForm');
-const registerForm = document.getElementById('registerForm');
-
-loginForm.addEventListener('submit', (e) => {
+// Login Form Handler
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const username = document.getElementById('loginUsername').value;
+    const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
 
-    signInWithEmailAndPassword(auth, username, password)
-        .then((userCredential) => {
-            const user = userCredential.user;
-            // Handle successful login
-        })
-        .catch((error) => {
-            const errorMessage = error.message;
-            document.getElementById('loginError').textContent = errorMessage;
-        });
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log('Logged in:', userCredential.user);
+        window.location.href = 'home.html'; // Redirect on success
+    } catch (error) {
+        document.getElementById('loginError').textContent = error.message;
+    }
 });
 
-registerForm.addEventListener('submit', (e) => {
+// Registration Form Handler
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const username = document.getElementById('registerUsername').value;
+    const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
 
-    createUserWithEmailAndPassword(auth, username, password)
-        .then((userCredential) => {
-            const user = userCredential.user;
-            // Handle successful registration
-        })
-        .catch((error) => {
-            const errorMessage = error.message;
-            document.getElementById('registerError').textContent = errorMessage;
-        });
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        console.log('Registered:', userCredential.user);
+        window.location.href = 'home.html'; // Redirect on success
+    } catch (error) {
+        document.getElementById('registerError').textContent = error.message;
+    }
 });
+
+// Toggle Between Forms (Add your existing UI toggle logic here)
