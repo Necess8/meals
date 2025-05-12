@@ -1348,7 +1348,7 @@ footer {
   .user-navbar {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-around;
     padding: 1rem 2rem;
   }
 
@@ -1356,7 +1356,6 @@ footer {
     flex: 1;
     justify-content: flex-start;
   }
-
   .navbar-center {
     flex: 2;
     justify-content: center;
@@ -1369,7 +1368,8 @@ footer {
 
   .nav-link {
     display: flex;
-    gap: 2rem;
+    font-size: 15px;
+    gap: 1rem;
   }
 
   .menuBtn {
