@@ -88,9 +88,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize Swiper if it exists on the page
   const swiperElement = document.querySelector(".mySwiper")
-  let swiper
-  if (swiperElement) {
-    swiper = new Swiper(".mySwiper", {
+  if (swiperElement && typeof Swiper !== "undefined") {
+    // Swiper is available, initialize it
+    const swiper = new Swiper(".mySwiper", {
       slidesPerView: 3,
       spaceBetween: 30,
       loop: false,
@@ -133,19 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadCuisineMeals(area)
   }
 
-  // Check if there's a search parameter in the URL
-  const searchQuery = urlParams.get("search")
-  if (searchQuery) {
-    const searchInput = document.getElementById("searchInput")
-    if (searchInput) {
-      searchInput.value = searchQuery
-      // Use setTimeout to ensure the DOM is fully loaded before searching
-      setTimeout(() => {
-        performSearch()
-      }, 500)
-    }
-  }
-
   // Set up back to cuisines button
   const backToCuisinesBtn = document.getElementById("back-to-cuisines")
   if (backToCuisinesBtn) {
@@ -161,37 +148,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const url = new URL(window.location)
         url.searchParams.delete("area")
         window.history.pushState({}, "", url)
-      }
-    })
-  }
-
-  // Set up search functionality
-  const searchBtn = document.getElementById("searchBtn")
-  const searchInput = document.getElementById("searchInput")
-
-  if (searchBtn && searchInput) {
-    searchBtn.addEventListener("click", (e) => {
-      e.preventDefault() // Prevent form submission
-      performSearch()
-    })
-
-    searchInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault() // Prevent form submission
-        performSearch()
-      }
-    })
-  }
-
-  // Set up cuisine search functionality
-  const cuisineSearchBtn = document.getElementById("cuisineSearchBtn")
-  const cuisineSearchInput = document.getElementById("cuisineSearchInput")
-
-  if (cuisineSearchBtn && cuisineSearchInput) {
-    cuisineSearchBtn.addEventListener("click", searchCuisines)
-    cuisineSearchInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        searchCuisines()
       }
     })
   }
@@ -215,14 +171,6 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  // Set up cuisine sorting if on cuisine page
-  const cuisineSortSelect = document.getElementById("cuisine-sort-select")
-  if (cuisineSortSelect) {
-    cuisineSortSelect.addEventListener("change", () => {
-      sortCuisineMeals(cuisineSortSelect.value)
-    })
-  }
-
   // Sign out button
   const signOutBtn = document.getElementById("signOutBtn")
   if (signOutBtn) {
@@ -242,17 +190,6 @@ document.addEventListener("DOMContentLoaded", () => {
 })
 
 // API Functions
-async function fetchMealsByName(name) {
-  try {
-    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${name}`)
-    const data = await response.json()
-    return data.meals || []
-  } catch (error) {
-    console.error("Error fetching meals by name:", error)
-    return []
-  }
-}
-
 async function fetchMealsByFirstLetter(letter) {
   try {
     const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?f=${letter}`)
@@ -714,6 +651,11 @@ function setupPagination() {
 }
 
 async function createMealCard(meal) {
+  if (!meal || !meal.idMeal || !meal.strMeal) {
+    console.error("Invalid meal data:", meal)
+    return document.createElement("div") // Return empty div to avoid errors
+  }
+
   const card = document.createElement("div")
   card.className = "meal-card"
   card.dataset.id = meal.idMeal
@@ -763,7 +705,12 @@ async function createMealCard(meal) {
   `
 
   // Add event listeners
-  card.addEventListener("click", () => showMealDetail(meal.idMeal))
+  card.addEventListener("click", (e) => {
+    // Only trigger if the click is directly on the card (not on a button or other interactive element)
+    if (e.target === card || e.target.tagName === "IMG" || e.target.tagName === "H3" || e.target.tagName === "P") {
+      showMealDetail(meal.idMeal)
+    }
+  })
 
   const viewRecipeBtn = card.querySelector(".view-recipe")
   const viewIngredientsBtn = card.querySelector(".view-ingredients")
@@ -789,32 +736,29 @@ async function createMealCard(meal) {
       return
     }
 
-    const icon = favoriteBtn.querySelector("i")
-    const isFilled = icon.classList.contains("ri-heart-fill")
+    const isAdding = favoriteBtn.classList.contains("add-favorite")
 
-    if (isFilled) {
-      // Remove from favorites
-      const result = await removeFavorite(loggedInUser.uid, meal.idMeal)
-      if (result.success) {
-        icon.classList.remove("ri-heart-fill")
-        icon.classList.add("ri-heart-line")
-        favoriteBtn.classList.remove("remove-favorite")
-        favoriteBtn.classList.add("add-favorite")
-        alert(result.message)
-      } else {
-        alert(result.error || "Error removing from favorites")
-      }
-    } else {
+    if (isAdding) {
       // Add to favorites
       const result = await addFavorite(loggedInUser.uid, meal.idMeal)
       if (result.success) {
-        icon.classList.remove("ri-heart-line")
-        icon.classList.add("ri-heart-fill")
         favoriteBtn.classList.remove("add-favorite")
         favoriteBtn.classList.add("remove-favorite")
+        favoriteBtn.innerHTML = '<i class="ri-heart-fill"></i>'
         alert(result.message)
       } else {
         alert(result.error || "Error adding to favorites")
+      }
+    } else {
+      // Remove from favorites
+      const result = await removeFavorite(loggedInUser.uid, meal.idMeal)
+      if (result.success) {
+        favoriteBtn.classList.remove("remove-favorite")
+        favoriteBtn.classList.add("add-favorite")
+        favoriteBtn.innerHTML = '<i class="ri-heart-line"></i>'
+        alert(result.message)
+      } else {
+        alert(result.error || "Error removing from favorites")
       }
     }
   })
@@ -876,256 +820,362 @@ async function createMealCard(meal) {
   return card
 }
 
+// This is the fixed version of the showMealDetail function
 async function showMealDetail(id, activeTab = "recipe") {
+  console.log(`Showing meal detail for ID: ${id}, tab: ${activeTab}`)
+
+  // First, check if we're on the right page and if the modals exist
   const modal = document.getElementById("mealDetailModal")
   const modalContent = document.getElementById("mealDetailContent")
+  const cuisineModal = document.getElementById("cuisineMealDetailModal")
+  const cuisineModalContent = document.getElementById("cuisineMealDetailContent")
 
-  if (!modal || !modalContent) return
+  // Create modals if they don't exist
+  if (!modal && !cuisineModal) {
+    // Create a generic modal if none exists
+    const newModal = document.createElement("div")
+    newModal.id = "mealDetailModal"
+    newModal.className = "modal"
+    newModal.innerHTML = `
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div id="mealDetailContent"></div>
+      </div>
+    `
+    document.body.appendChild(newModal)
 
-  // Show loading state
-  modalContent.innerHTML = `
-    <div class="meal-detail-skeleton">
-      <div class="meal-image skeleton-loader"></div>
-      <div class="meal-title skeleton-loader"></div>
-      <div class="meal-category skeleton-loader"></div>
-      <div class="meal-ingredients skeleton-loader"></div>
-      <div class="meal-instructions skeleton-loader"></div>
-    </div>
-  `
+    // Now we can get the elements
+    const modal = document.getElementById("mealDetailModal")
+    const modalContent = document.getElementById("mealDetailContent")
 
-  modal.style.display = "block"
-
-  try {
-    const meal = await fetchMealById(id)
-    if (!meal) {
-      modalContent.innerHTML = "<p>Meal details not found.</p>"
+    // Use these for the rest of the function
+    var useModal = modal
+    var useModalContent = modalContent
+  } else {
+    // Determine which modal to use based on context
+    let useModal, useModalContent
+    if (window.location.href.includes("cuisines.html") && cuisineModal && cuisineModalContent) {
+      useModal = cuisineModal
+      useModalContent = cuisineModalContent
+    } else if (modal && modalContent) {
+      useModal = modal
+      useModalContent = modalContent
+    } else {
+      console.error("Modal elements not found")
       return
     }
 
-    // Get ingredients and measurements
-    const ingredients = []
-    for (let i = 1; i <= 20; i++) {
-      const ingredient = meal[`strIngredient${i}`]
-      const measure = meal[`strMeasure${i}`]
+    // Show loading state
+    useModalContent.innerHTML = `
+      <div class="meal-detail-skeleton">
+        <div class="meal-image skeleton-loader"></div>
+        <div class="meal-title skeleton-loader"></div>
+        <div class="meal-category skeleton-loader"></div>
+        <div class="meal-ingredients skeleton-loader"></div>
+        <div class="meal-instructions skeleton-loader"></div>
+      </div>
+    `
 
-      if (ingredient && ingredient.trim() !== "") {
-        ingredients.push({
-          name: ingredient,
-          measure: measure || "",
-        })
+    useModal.style.display = "block"
+
+    try {
+      const meal = await fetchMealById(id)
+      if (!meal) {
+        useModalContent.innerHTML = "<p>Meal details not found.</p>"
+        return
       }
-    }
 
-    // Get user's rating
-    let userRating = 0
-    const loggedInUser = getCurrentUser()
-    if (loggedInUser) {
-      userRating = await getUserRating(loggedInUser.uid, id)
-    }
+      // Rest of your existing showMealDetail function...
+      // Get ingredients and measurements
+      const ingredients = []
+      for (let i = 1; i <= 20; i++) {
+        const ingredient = meal[`strIngredient${i}`]
+        const measure = meal[`strMeasure${i}`]
 
-    // Get average rating
-    const avgRating = await getAverageRating(id)
+        if (ingredient && ingredient.trim() !== "") {
+          ingredients.push({
+            name: ingredient,
+            measure: measure || "",
+          })
+        }
+      }
 
-    // Check if meal is favorited
-    let isFavorite = false
-    if (loggedInUser) {
-      isFavorite = await isMealFavorited(loggedInUser.uid, id)
-    }
+      // Get user's rating
+      let userRating = 0
+      const loggedInUser = getCurrentUser()
+      if (loggedInUser) {
+        userRating = await getUserRating(loggedInUser.uid, id)
+      }
 
-    // Create HTML content
-    modalContent.innerHTML = `
-      <div class="meal-detail-header">
-        <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
-        <div class="meal-detail-header-content">
-          <h2>${meal.strMeal}</h2>
-          <p>Category: ${meal.strCategory}</p>
-          <p>Origin: ${meal.strArea}</p>
-          
-          <div class="meal-detail-ratings">
-            <div class="meal-detail-avg-rating" title="Average rating: ${avgRating}" data-meal-id="${meal.idMeal}">
-              <p>Average Rating: ${avgRating}</p>
-              <div class="stars">
-                ${generateRatingStars(avgRating)}
-              </div>
-            </div>
+      // Get average rating
+      const avgRating = await getAverageRating(id)
+
+      // Check if meal is favorited
+      let isFavorite = false
+      if (loggedInUser) {
+        isFavorite = await isMealFavorited(loggedInUser.uid, id)
+      }
+
+      // Create HTML content
+      useModalContent.innerHTML = `
+        <div class="meal-detail-header">
+          <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+          <div class="meal-detail-header-content">
+            <h2>${meal.strMeal}</h2>
+            <p>Category: ${meal.strCategory}</p>
+            <p>Origin: ${meal.strArea}</p>
             
-            <div class="meal-detail-rating" data-meal-id="${meal.idMeal}" data-user-rating="${userRating}">
-              <p>Your Rating:</p>
-              <div class="stars">
-                <i class="ri-poker-hearts-${userRating >= 1 ? "fill" : "line"}" data-rating="1"></i>
-                <i class="ri-poker-hearts-${userRating >= 2 ? "fill" : "line"}" data-rating="2"></i>
-                <i class="ri-poker-hearts-${userRating >= 3 ? "fill" : "line"}" data-rating="3"></i>
-                <i class="ri-poker-hearts-${userRating >= 4 ? "fill" : "line"}" data-rating="4"></i>
-                <i class="ri-poker-hearts-${userRating >= 5 ? "fill" : "line"}" data-rating="5"></i>
+            <div class="meal-detail-ratings">
+              <div class="meal-detail-avg-rating" title="Average rating: ${avgRating}" data-meal-id="${meal.idMeal}">
+                <p>Average Rating: ${avgRating}</p>
+                <div class="stars">
+                  ${generateRatingStars(avgRating)}
+                </div>
+              </div>
+              
+              <div class="meal-detail-rating" data-meal-id="${meal.idMeal}" data-user-rating="${userRating}">
+                <p>Your Rating:</p>
+                <div class="stars">
+                  <i class="ri-poker-hearts-${userRating >= 1 ? "fill" : "line"}" data-rating="1"></i>
+                  <i class="ri-poker-hearts-${userRating >= 2 ? "fill" : "line"}" data-rating="2"></i>
+                  <i class="ri-poker-hearts-${userRating >= 3 ? "fill" : "line"}" data-rating="3"></i>
+                  <i class="ri-poker-hearts-${userRating >= 4 ? "fill" : "line"}" data-rating="4"></i>
+                  <i class="ri-poker-hearts-${userRating >= 5 ? "fill" : "line"}" data-rating="5"></i>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="meal-detail-tabs">
-        <button id="recipe-tab" class="${activeTab === "recipe" ? "active" : ""}">Recipe</button>
-        <button id="ingredients-tab" class="${activeTab === "ingredients" ? "active" : ""}">Ingredients</button>
-      </div>
-      
-      <div class="meal-detail-content">
-        <div id="recipe-content" style="display: ${activeTab === "recipe" ? "block" : "none"}">
-          <h3>Instructions</h3>
-          <div class="instructions">
-            ${meal.strInstructions.replace(/\n/g, "<br>")}
           </div>
         </div>
         
-        <div id="ingredients-content" style="display: ${activeTab === "ingredients" ? "block" : "none"}">
-          <h3>Ingredients</h3>
-          <div class="ingredients-grid">
-            ${ingredients
-              .map(
-                (ing) => `
-              <div class="ingredient-item">
-                <img src="https://www.themealdb.com/images/ingredients/${ing.name}-Small.png" alt="${ing.name}">
-                <div>
-                  <p>${ing.name}</p>
-                  <small>${ing.measure}</small>
+        <div class="meal-detail-tabs">
+          <button id="${useModal.id === "cuisineMealDetailModal" ? "cuisine-" : ""}recipe-tab" class="${activeTab === "recipe" ? "active" : ""}">Recipe</button>
+          <button id="${useModal.id === "cuisineMealDetailModal" ? "cuisine-" : ""}ingredients-tab" class="${activeTab === "ingredients" ? "active" : ""}">Ingredients</button>
+        </div>
+        
+        <div class="meal-detail-content">
+          <div id="${useModal.id === "cuisineMealDetailModal" ? "cuisine-" : ""}recipe-content" style="display: ${activeTab === "recipe" ? "block" : "none"}">
+            <h3>Instructions</h3>
+            <div class="instructions">
+              ${meal.strInstructions.replace(/\n/g, "<br>")}
+            </div>
+          </div>
+          
+          <div id="${useModal.id === "cuisineMealDetailModal" ? "cuisine-" : ""}ingredients-content" style="display: ${activeTab === "ingredients" ? "block" : "none"}">
+            <h3>Ingredients</h3>
+            <div class="ingredients-grid">
+              ${ingredients
+                .map(
+                  (ing) => `
+                <div class="ingredient-item">
+                  <img src="https://www.themealdb.com/images/ingredients/${ing.name}-Small.png" alt="${ing.name}">
+                  <div>
+                    <p>${ing.name}</p>
+                    <small>${ing.measure}</small>
+                  </div>
                 </div>
-              </div>
-            `,
-              )
-              .join("")}
+              `,
+                )
+                .join("")}
+            </div>
+          </div>
+        </div>
+      `
+
+      // Set up tab switching
+      const recipeTabId = useModal.id === "cuisineMealDetailModal" ? "cuisine-recipe-tab" : "recipe-tab"
+      const ingredientsTabId = useModal.id === "cuisineMealDetailModal" ? "cuisine-ingredients-tab" : "ingredients-tab"
+      const recipeContentId = useModal.id === "cuisineMealDetailModal" ? "cuisine-recipe-content" : "recipe-content"
+      const ingredientsContentId =
+        useModal.id === "cuisineMealDetailModal" ? "cuisine-ingredients-content" : "ingredients-content"
+
+      const recipeTab = document.getElementById(recipeTabId)
+      const ingredientsTab = document.getElementById(ingredientsTabId)
+      const recipeContent = document.getElementById(recipeContentId)
+      const ingredientsContent = document.getElementById(ingredientsContentId)
+
+      if (recipeTab && ingredientsTab && recipeContent && ingredientsContent) {
+        recipeTab.addEventListener("click", () => {
+          recipeTab.classList.add("active")
+          ingredientsTab.classList.remove("active")
+          recipeContent.style.display = "block"
+          ingredientsContent.style.display = "none"
+        })
+
+        ingredientsTab.addEventListener("click", () => {
+          ingredientsTab.classList.add("active")
+          recipeTab.classList.remove("active")
+          ingredientsContent.style.display = "block"
+          recipeContent.style.display = "none"
+        })
+      }
+
+      // Set up rating functionality in modal
+      const ratingStars = useModalContent.querySelectorAll(".meal-detail-rating .stars i")
+      ratingStars.forEach((star) => {
+        star.addEventListener("click", async (e) => {
+          const loggedInUser = getCurrentUser()
+          if (!loggedInUser) {
+            alert("Please log in to rate meals")
+            return
+          }
+
+          const rating = Number.parseInt(e.target.dataset.rating)
+          await addRating(loggedInUser.uid, meal.idMeal, rating)
+
+          // Update stars in modal
+          ratingStars.forEach((s, index) => {
+            if (index < rating) {
+              s.classList.add("ri-poker-hearts-fill")
+              s.classList.remove("ri-poker-hearts-line")
+            } else {
+              s.classList.add("ri-poker-hearts-line")
+              s.classList.remove("ri-poker-hearts-fill")
+            }
+          })
+
+          // Update user rating data attribute
+          useModalContent.querySelector(".meal-detail-rating").dataset.userRating = rating
+
+          // Update average rating
+          const newAvgRating = await getAverageRating(meal.idMeal)
+          updateAverageRatingDisplay(meal.idMeal, newAvgRating)
+        })
+      })
+
+      // Set up watch video button
+      const watchVideoBtn = useModal.querySelector(
+        useModal.id === "cuisineMealDetailModal" ? "#cuisine-watch-video" : "#watch-video",
+      )
+      if (watchVideoBtn) {
+        if (meal.strYoutube) {
+          watchVideoBtn.addEventListener("click", () => {
+            window.open(meal.strYoutube, "_blank")
+          })
+          watchVideoBtn.style.display = "block"
+        } else {
+          watchVideoBtn.style.display = "none"
+        }
+      }
+
+      // Set up add to favorites button
+      const addToFavoritesBtn = useModal.querySelector(
+        useModal.id === "cuisineMealDetailModal" ? "#cuisine-add-to-favorites" : "#add-to-favorites",
+      )
+      if (addToFavoritesBtn) {
+        addToFavoritesBtn.dataset.id = meal.idMeal
+
+        // Update button text and icon based on favorite status
+        if (isFavorite) {
+          addToFavoritesBtn.innerHTML = '<i class="ri-heart-fill"></i> Remove from Favorites'
+        } else {
+          addToFavoritesBtn.innerHTML = '<i class="ri-heart-line"></i> Add to Favorites'
+        }
+
+        addToFavoritesBtn.addEventListener("click", async () => {
+          const loggedInUser = getCurrentUser()
+          if (!loggedInUser) {
+            alert("Please log in to manage favorites")
+            return
+          }
+
+          if (isFavorite) {
+            // Remove from favorites
+            const result = await removeFavorite(loggedInUser.uid, meal.idMeal)
+            if (result.success) {
+              isFavorite = false
+              addToFavoritesBtn.innerHTML = '<i class="ri-heart-line"></i> Add to Favorites'
+              alert(result.message)
+
+              // Update heart icon in all meal cards
+              document.querySelectorAll(`.meal-card[data-id="${meal.idMeal}"] .remove-favorite i`).forEach((icon) => {
+                icon.classList.remove("ri-heart-fill")
+                icon.classList.add("ri-heart-line")
+                icon.parentElement.classList.remove("remove-favorite")
+                icon.parentElement.classList.add("add-favorite")
+              })
+            } else {
+              alert(result.error || "Error removing from favorites")
+            }
+          } else {
+            // Add to favorites
+            const result = await addFavorite(loggedInUser.uid, meal.idMeal)
+            if (result.success) {
+              isFavorite = true
+              addToFavoritesBtn.innerHTML = '<i class="ri-heart-fill"></i> Remove from Favorites'
+              alert(result.message)
+
+              // Update heart icon in all meal cards
+              document.querySelectorAll(`.meal-card[data-id="${meal.idMeal}"] .add-favorite i`).forEach((icon) => {
+                icon.classList.remove("ri-heart-line")
+                icon.classList.add("ri-heart-fill")
+                icon.parentElement.classList.remove("add-favorite")
+                icon.parentElement.classList.add("remove-favorite")
+              })
+            } else {
+              alert(result.error || "Error adding to favorites")
+            }
+          }
+        })
+      }
+    } catch (error) {
+      console.error("Error showing meal details:", error)
+      useModalContent.innerHTML = "<p>Error loading meal details. Please try again.</p>"
+    }
+  }
+}
+
+// Also add this HTML to your page if it doesn't exist
+function ensureModalsExist() {
+  if (!document.getElementById("mealDetailModal")) {
+    const modalHTML = `
+      <div id="mealDetailModal" class="modal">
+        <div class="modal-content">
+          <span class="close-modal">&times;</span>
+          <div id="mealDetailContent"></div>
+          <div class="modal-actions">
+            <button id="watch-video" class="modal-action-button">
+              <i class="ri-youtube-line"></i> Watch Video
+            </button>
+            <button id="add-to-favorites" class="modal-action-button">
+              <i class="ri-heart-line"></i> Add to Favorites
+            </button>
           </div>
         </div>
       </div>
     `
 
-    // Set up tab switching
-    const recipeTab = document.getElementById("recipe-tab")
-    const ingredientsTab = document.getElementById("ingredients-tab")
-    const recipeContent = document.getElementById("recipe-content")
-    const ingredientsContent = document.getElementById("ingredients-content")
+    document.body.insertAdjacentHTML("beforeend", modalHTML)
+  }
 
-    recipeTab.addEventListener("click", () => {
-      recipeTab.classList.add("active")
-      ingredientsTab.classList.remove("active")
-      recipeContent.style.display = "block"
-      ingredientsContent.style.display = "none"
-    })
+  if (!document.getElementById("cuisineMealDetailModal")) {
+    const cuisineModalHTML = `
+      <div id="cuisineMealDetailModal" class="modal">
+        <div class="modal-content">
+          <span class="close-cuisine-modal">&times;</span>
+          <div id="cuisineMealDetailContent"></div>
+          <div class="modal-actions">
+            <button id="cuisine-watch-video" class="modal-action-button">
+              <i class="ri-youtube-line"></i> Watch Video
+            </button>
+            <button id="cuisine-add-to-favorites" class="modal-action-button">
+              <i class="ri-heart-line"></i> Add to Favorites
+            </button>
+          </div>
+        </div>
+      </div>
+    `
 
-    ingredientsTab.addEventListener("click", () => {
-      ingredientsTab.classList.add("active")
-      recipeTab.classList.remove("active")
-      ingredientsContent.style.display = "block"
-      recipeContent.style.display = "none"
-    })
-
-    // Set up rating functionality in modal
-    const ratingStars = modalContent.querySelectorAll(".meal-detail-rating .stars i")
-    ratingStars.forEach((star) => {
-      star.addEventListener("click", async (e) => {
-        const loggedInUser = getCurrentUser()
-        if (!loggedInUser) {
-          alert("Please log in to rate meals")
-          return
-        }
-
-        const rating = Number.parseInt(e.target.dataset.rating)
-        await addRating(loggedInUser.uid, meal.idMeal, rating)
-
-        // Update stars in modal
-        ratingStars.forEach((s, index) => {
-          if (index < rating) {
-            s.classList.add("ri-poker-hearts-fill")
-            s.classList.remove("ri-poker-hearts-line")
-          } else {
-            s.classList.add("ri-poker-hearts-line")
-            s.classList.remove("ri-poker-hearts-fill")
-          }
-        })
-
-        // Update user rating data attribute
-        modalContent.querySelector(".meal-detail-rating").dataset.userRating = rating
-
-        // Update average rating
-        const newAvgRating = await getAverageRating(meal.idMeal)
-        updateAverageRatingDisplay(meal.idMeal, newAvgRating)
-      })
-    })
-
-    // Set up watch video button
-    const watchVideoBtn = document.getElementById("watch-video")
-    if (watchVideoBtn) {
-      if (meal.strYoutube) {
-        watchVideoBtn.addEventListener("click", () => {
-          window.open(meal.strYoutube, "_blank")
-        })
-        watchVideoBtn.style.display = "block"
-      } else {
-        watchVideoBtn.style.display = "none"
-      }
-    }
-
-    // Set up add to favorites button
-    const addToFavoritesBtn = document.getElementById("add-to-favorites")
-    if (addToFavoritesBtn) {
-      addToFavoritesBtn.dataset.id = meal.idMeal
-
-      // Update button text and icon based on favorite status
-      if (isFavorite) {
-        addToFavoritesBtn.innerHTML = '<i class="ri-heart-fill"></i> Remove from Favorites'
-      } else {
-        addToFavoritesBtn.innerHTML = '<i class="ri-heart-line"></i> Add to Favorites'
-      }
-
-      addToFavoritesBtn.addEventListener("click", async () => {
-        const loggedInUser = getCurrentUser()
-        if (!loggedInUser) {
-          alert("Please log in to manage favorites")
-          return
-        }
-
-        if (isFavorite) {
-          // Remove from favorites
-          const result = await removeFavorite(loggedInUser.uid, meal.idMeal)
-          if (result.success) {
-            isFavorite = false
-            addToFavoritesBtn.innerHTML = '<i class="ri-heart-line"></i> Add to Favorites'
-            alert(result.message)
-
-            // Update heart icon in all meal cards
-            document.querySelectorAll(`.meal-card[data-id="${meal.idMeal}"] .remove-favorite i`).forEach((icon) => {
-              icon.classList.remove("ri-heart-fill")
-              icon.classList.add("ri-heart-line")
-              icon.parentElement.classList.remove("remove-favorite")
-              icon.parentElement.classList.add("add-favorite")
-            })
-          } else {
-            alert(result.error || "Error removing from favorites")
-          }
-        } else {
-          // Add to favorites
-          const result = await addFavorite(loggedInUser.uid, meal.idMeal)
-          if (result.success) {
-            isFavorite = true
-            addToFavoritesBtn.innerHTML = '<i class="ri-heart-fill"></i> Remove from Favorites'
-            alert(result.message)
-
-            // Update heart icon in all meal cards
-            document.querySelectorAll(`.meal-card[data-id="${meal.idMeal}"] .add-favorite i`).forEach((icon) => {
-              icon.classList.remove("ri-heart-line")
-              icon.classList.add("ri-heart-fill")
-              icon.parentElement.classList.remove("add-favorite")
-              icon.parentElement.classList.add("remove-favorite")
-            })
-          } else {
-            alert(result.error || "Error adding to favorites")
-          }
-        }
-      })
-    }
-  } catch (error) {
-    console.error("Error showing meal details:", error)
-    modalContent.innerHTML = "<p>Error loading meal details. Please try again.</p>"
+    document.body.insertAdjacentHTML("beforeend", cuisineModalHTML)
   }
 }
+
+// Call this function when the DOM is loaded
+document.addEventListener("DOMContentLoaded", () => {
+  // Your existing DOMContentLoaded code...
+
+  // Add this line to ensure modals exist
+  ensureModalsExist()
+})
 
 // Close modal when clicking the close button or outside the modal
 document.addEventListener("click", (e) => {
@@ -1157,211 +1207,6 @@ document.addEventListener("click", (e) => {
     profileMealDetailModal.style.display = "none"
   }
 })
-
-// IMPROVED SEARCH FUNCTIONALITY
-async function performSearch() {
-  const searchInput = document.getElementById("searchInput")
-  const query = searchInput.value.trim()
-  if (!query) return
-
-  // If we're not on the userpage, redirect to userpage with search parameter
-  if (!window.location.href.includes("userpage.html")) {
-    window.location.href = `userpage.html?search=${encodeURIComponent(query)}`
-    return
-  }
-
-  const searchResultsSection = document.getElementById("search-results-section")
-  const searchResults = document.getElementById("search-results")
-  const noResults = document.getElementById("no-results")
-  const allMealsSection = document.getElementById("all-meals-section")
-  const featuredMealsSection = document.getElementById("featured-meals")
-  const sortOptionsSection = document.getElementById("sort-options")
-
-  if (!searchResultsSection || !searchResults || !noResults) return
-
-  // Show search results section, hide others
-  searchResultsSection.style.display = "block"
-  if (allMealsSection) allMealsSection.style.display = "none"
-  if (featuredMealsSection) featuredMealsSection.style.display = "none"
-  if (sortOptionsSection) sortOptionsSection.style.display = "none"
-
-  // Show loading state
-  searchResults.innerHTML = `
-    <div class="meal-card skeleton-loader"></div>
-    <div class="meal-card skeleton-loader"></div>
-    <div class="meal-card skeleton-loader"></div>
-  `
-  noResults.style.display = "none"
-
-  try {
-    let meals = []
-    const searchPromises = []
-
-    // 1. Search by meal name
-    console.log("Searching by meal name:", query)
-    searchPromises.push(
-      fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.meals) {
-            console.log(`Found ${data.meals.length} meals by name`)
-            meals = [...meals, ...data.meals]
-          }
-        })
-        .catch((error) => console.error("Error searching by name:", error)),
-    )
-
-    // 2. Search by category
-    console.log("Searching by category:", query)
-    searchPromises.push(
-      fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(query)}`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.meals) {
-            console.log(`Found ${data.meals.length} meals by category`)
-            // Add unique meals
-            const existingIds = new Set(meals.map((m) => m.idMeal))
-            const newMeals = data.meals.filter((m) => !existingIds.has(m.idMeal))
-            meals = [...meals, ...newMeals]
-          }
-        })
-        .catch((error) => console.error("Error searching by category:", error)),
-    )
-
-    // 3. Search by area/cuisine
-    console.log("Searching by area/cuisine:", query)
-    searchPromises.push(
-      fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?a=${encodeURIComponent(query)}`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.meals) {
-            console.log(`Found ${data.meals.length} meals by area`)
-            // Add unique meals
-            const existingIds = new Set(meals.map((m) => m.idMeal))
-            const newMeals = data.meals.filter((m) => !existingIds.has(m.idMeal))
-            meals = [...meals, ...newMeals]
-          }
-        })
-        .catch((error) => console.error("Error searching by area:", error)),
-    )
-
-    // 4. Search by ingredient
-    console.log("Searching by ingredient:", query)
-    searchPromises.push(
-      fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(query)}`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.meals) {
-            console.log(`Found ${data.meals.length} meals by ingredient`)
-            // Add unique meals
-            const existingIds = new Set(meals.map((m) => m.idMeal))
-            const newMeals = data.meals.filter((m) => !existingIds.has(m.idMeal))
-            meals = [...meals, ...newMeals]
-          }
-        })
-        .catch((error) => console.error("Error searching by ingredient:", error)),
-    )
-
-    // Wait for all search promises to complete
-    await Promise.all(searchPromises)
-
-    // Remove duplicates (just in case)
-    meals = [...new Map(meals.map((meal) => [meal.idMeal, meal])).values()]
-
-    console.log(`Total unique meals found: ${meals.length}`)
-
-    if (meals.length === 0) {
-      searchResults.innerHTML = ""
-      noResults.style.display = "block"
-      return
-    }
-
-    // Display results
-    searchResults.innerHTML = ""
-    console.log(`Displaying ${meals.length} search results`)
-
-    // Add a loading indicator for each meal
-    meals.forEach(() => {
-      const loadingCard = document.createElement("div")
-      loadingCard.className = "meal-card skeleton-loader"
-      searchResults.appendChild(loadingCard)
-    })
-
-    for (let i = 0; i < meals.length; i++) {
-      const meal = meals[i]
-      // For search results, we might need to fetch full meal details if we only have partial data
-      let fullMeal = meal
-      if (!meal.strCategory || !meal.strInstructions) {
-        console.log(`Fetching full details for meal ${meal.idMeal}`)
-        try {
-          const response = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`)
-          const data = await response.json()
-          if (data.meals && data.meals[0]) {
-            fullMeal = data.meals[0]
-          }
-        } catch (error) {
-          console.error(`Error fetching details for meal ${meal.idMeal}:`, error)
-        }
-      }
-
-      if (fullMeal) {
-        // Get average rating for each meal
-        const avgRating = await getAverageRating(meal.idMeal)
-        fullMeal.avgRating = avgRating
-
-        const mealCard = await createMealCard(fullMeal)
-
-        // Replace the loading skeleton with the actual meal card
-        if (searchResults.children[i] && searchResults.children[i].classList.contains("skeleton-loader")) {
-          searchResults.replaceChild(mealCard, searchResults.children[i])
-        } else {
-          searchResults.appendChild(mealCard)
-        }
-      }
-    }
-
-    // Remove any remaining skeleton loaders
-    Array.from(searchResults.querySelectorAll(".skeleton-loader")).forEach((loader) => loader.remove())
-
-    // Add search term to page title
-    document.title = `Search results for "${query}" - MealFinder`
-
-    // Add a clear search button if it doesn't exist
-    if (!document.getElementById("clear-search")) {
-      const clearButton = document.createElement("button")
-      clearButton.id = "clear-search"
-      clearButton.className = "clear-search-btn"
-      clearButton.innerHTML = "Clear Search"
-      clearButton.addEventListener("click", () => {
-        // Clear search input
-        searchInput.value = ""
-
-        // Hide search results, show all meals
-        searchResultsSection.style.display = "none"
-        if (allMealsSection) allMealsSection.style.display = "block"
-        if (featuredMealsSection) featuredMealsSection.style.display = "block"
-        if (sortOptionsSection) sortOptionsSection.style.display = "block"
-
-        // Update URL
-        const url = new URL(window.location)
-        url.searchParams.delete("search")
-        window.history.pushState({}, "", url)
-
-        // Reset page title
-        document.title = "MealFinder"
-
-        // Remove clear button
-        clearButton.remove()
-      })
-
-      // Insert before search results
-      searchResultsSection.insertBefore(clearButton, searchResults)
-    }
-  } catch (error) {
-    console.error("Error performing search:", error)
-    searchResults.innerHTML = "<p>Error performing search. Please try again.</p>"
-  }
-}
 
 // Cuisines page functionality
 async function loadAllCuisines() {
@@ -1459,40 +1304,28 @@ async function loadCuisineMeals(area) {
     sortContainer.id = "cuisine-sort-container"
     sortContainer.className = "sort-container"
     sortContainer.innerHTML = `
-      <label for="cuisine-sort-select">Sort by:</label>
-      <select id="cuisine-sort-select" class="sort-select">
-        <option value="default">Default</option>
-        <option value="a-z">Name (A-Z)</option>
-        <option value="z-a">Name (Z-A)</option>
-      </select>
-      
-      <label for="cuisine-category-filter" class="ml-4">Filter by Category:</label>
-      <select id="cuisine-category-filter" class="sort-select">
-        <option value="all">All Categories</option>
-        <!-- Categories will be loaded dynamically -->
-      </select>
-    `
+    <label for="cuisine-sort-select">Sort by:</label>
+    <select id="cuisine-sort-select" class="sort-select">
+      <option value="default">Default</option>
+      <option value="a-z">Name (A-Z)</option>
+      <option value="z-a">Name (Z-A)</option>
+    </select>
+    
+    <label for="cuisine-category-filter" class="ml-4">Filter by Category:</label>
+    <select id="cuisine-category-filter" class="sort-select">
+      <option value="all">All Categories</option>
+      <!-- Categories will be loaded dynamically -->
+    </select>
+  `
 
-    // Insert sort container before cuisine meals
-    cuisineMealsSection.insertBefore(sortContainer, cuisineMeals)
-
-    // Set up event listeners for sorting and filtering
-    const cuisineSortSelect = document.getElementById("cuisine-sort-select")
-    const cuisineCategoryFilter = document.getElementById("cuisine-category-filter")
-
-    if (cuisineSortSelect) {
-      cuisineSortSelect.addEventListener("change", () => {
-        sortCuisineMeals(cuisineSortSelect.value)
-      })
-    }
-
-    if (cuisineCategoryFilter) {
-      // Load categories
-      loadCuisineCategories(area)
-
-      cuisineCategoryFilter.addEventListener("change", () => {
-        filterCuisineMealsByCategory(cuisineCategoryFilter.value)
-      })
+    // Find the correct container to insert the sort options
+    const cuisineHeader = cuisineMealsSection.querySelector(".cuisine-header")
+    if (cuisineHeader) {
+      // Insert after the cuisine header
+      cuisineHeader.parentNode.insertBefore(sortContainer, cuisineHeader.nextSibling)
+    } else {
+      // Fallback: just append to the cuisine meals section
+      cuisineMealsSection.appendChild(sortContainer)
     }
   }
 
@@ -1512,7 +1345,7 @@ async function loadCuisineMeals(area) {
       return
     }
 
-    // Store meals for sorting
+    // Reset and clear the cuisineMealsList
     cuisineMealsList = []
 
     // Fetch full details for each meal
@@ -1525,6 +1358,41 @@ async function loadCuisineMeals(area) {
         cuisineMealsList.push(fullMeal)
       }
     }
+
+    // Set up the event listeners for sorting and filtering
+    const cuisineSortSelect = document.getElementById("cuisine-sort-select")
+    const cuisineCategoryFilter = document.getElementById("cuisine-category-filter")
+
+    if (cuisineSortSelect) {
+      // Remove existing event listeners by cloning and replacing
+      const newSortSelect = cuisineSortSelect.cloneNode(true)
+      cuisineSortSelect.parentNode.replaceChild(newSortSelect, cuisineSortSelect)
+
+      // Add new event listener
+      newSortSelect.addEventListener("change", () => {
+        currentCuisineSortOption = newSortSelect.value
+        displayCuisineMeals()
+      })
+    }
+
+    if (cuisineCategoryFilter) {
+      // Load categories
+      await loadCuisineCategories(area)
+
+      // Remove existing event listeners by cloning and replacing
+      const newCategoryFilter = cuisineCategoryFilter.cloneNode(true)
+      cuisineCategoryFilter.parentNode.replaceChild(newCategoryFilter, cuisineCategoryFilter)
+
+      // Add new event listener
+      newCategoryFilter.addEventListener("change", () => {
+        currentCuisineFilter = newCategoryFilter.value
+        displayCuisineMeals()
+      })
+    }
+
+    // Reset sort and filter options
+    currentCuisineSortOption = "default"
+    currentCuisineFilter = "all"
 
     // Display meals
     displayCuisineMeals()
@@ -1566,20 +1434,16 @@ async function displayCuisineMeals() {
     return
   }
 
+  console.log(`Displaying ${displayMeals.length} meals after filtering`)
+
   for (const meal of displayMeals) {
-    const mealCard = await createMealCard(meal)
-    cuisineMeals.appendChild(mealCard)
+    try {
+      const mealCard = await createMealCard(meal)
+      cuisineMeals.appendChild(mealCard)
+    } catch (error) {
+      console.error(`Error creating card for meal ${meal.idMeal}:`, error)
+    }
   }
-}
-
-function sortCuisineMeals(sortOption) {
-  currentCuisineSortOption = sortOption
-  displayCuisineMeals()
-}
-
-function filterCuisineMealsByCategory(category) {
-  currentCuisineFilter = category
-  displayCuisineMeals()
 }
 
 async function loadCuisineCategories(area) {
@@ -1591,16 +1455,12 @@ async function loadCuisineCategories(area) {
     cuisineCategoryFilter.remove(1)
   }
 
-  // Get all meals for this cuisine
-  const meals = await fetchMealsByArea(area)
-
-  // Get unique categories
+  // Get unique categories from the cuisine meals list
   const categories = new Set()
 
-  for (const meal of meals) {
-    const fullMeal = await fetchMealById(meal.idMeal)
-    if (fullMeal && fullMeal.strCategory) {
-      categories.add(fullMeal.strCategory)
+  for (const meal of cuisineMealsList) {
+    if (meal.strCategory) {
+      categories.add(meal.strCategory)
     }
   }
 
@@ -1611,279 +1471,6 @@ async function loadCuisineCategories(area) {
     option.textContent = category
     cuisineCategoryFilter.appendChild(option)
   })
-}
-
-function searchCuisines() {
-  const cuisineSearchInput = document.getElementById("cuisineSearchInput")
-  const query = cuisineSearchInput.value.trim().toLowerCase()
-  if (!query) return
-
-  const cuisineCards = document.querySelectorAll(".cuisine-card")
-  let found = false
-
-  cuisineCards.forEach((card) => {
-    const cuisineName = card.querySelector("h3").textContent.toLowerCase()
-
-    if (cuisineName.includes(query)) {
-      card.style.display = "block"
-      found = true
-    } else {
-      card.style.display = "none"
-    }
-  })
-
-  // If no cuisines match, show message
-  const cuisinesGrid = document.getElementById("cuisines-grid")
-  if (cuisinesGrid) {
-    const noResultsMsg = cuisinesGrid.querySelector(".no-results-msg")
-
-    if (!found) {
-      if (!noResultsMsg) {
-        const msg = document.createElement("p")
-        msg.className = "no-results-msg"
-        msg.textContent = `No cuisines found matching "${query}".`
-        cuisinesGrid.appendChild(msg)
-      }
-    } else if (noResultsMsg) {
-      noResultsMsg.remove()
-    }
-  }
-}
-
-// Show cuisine meal details
-async function showCuisineMealDetail(id, activeTab = "recipe") {
-  const modal = document.getElementById("cuisineMealDetailModal")
-  const modalContent = document.getElementById("cuisineMealDetailContent")
-
-  if (!modal || !modalContent) return
-
-  // Show loading state
-  modalContent.innerHTML = `
-    <div class="meal-detail-skeleton">
-      <div class="meal-image skeleton-loader"></div>
-      <div class="meal-title skeleton-loader"></div>
-      <div class="meal-category skeleton-loader"></div>
-      <div class="meal-ingredients skeleton-loader"></div>
-      <div class="meal-instructions skeleton-loader"></div>
-    </div>
-  `
-
-  modal.style.display = "block"
-
-  try {
-    const meal = await fetchMealById(id)
-    if (!meal) {
-      modalContent.innerHTML = "<p>Meal details not found.</p>"
-      return
-    }
-
-    // Get ingredients and measurements
-    const ingredients = []
-    for (let i = 1; i <= 20; i++) {
-      const ingredient = meal[`strIngredient${i}`]
-      const measure = meal[`strMeasure${i}`]
-
-      if (ingredient && ingredient.trim() !== "") {
-        ingredients.push({
-          name: ingredient,
-          measure: measure || "",
-        })
-      }
-    }
-
-    // Get user's rating
-    let userRating = 0
-    const loggedInUser = getCurrentUser()
-    if (loggedInUser) {
-      userRating = await getUserRating(loggedInUser.uid, id)
-    }
-
-    // Get average rating
-    const avgRating = await getAverageRating(id)
-
-    // Check if meal is favorited
-    let isFavorite = false
-    if (loggedInUser) {
-      isFavorite = await isMealFavorited(loggedInUser.uid, id)
-    }
-
-    // Create HTML content
-    modalContent.innerHTML = `
-      <div class="meal-detail-header">
-        <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
-        <div class="meal-detail-header-content">
-          <h2>${meal.strMeal}</h2>
-          <p>Category: ${meal.strCategory}</p>
-          <p>Origin: ${meal.strArea}</p>
-          
-          <div class="meal-detail-ratings">
-            <div class="meal-detail-avg-rating" title="Average rating: ${avgRating}" data-meal-id="${meal.idMeal}">
-              <p>Average Rating: ${avgRating}</p>
-              <div class="stars">
-                ${generateRatingStars(avgRating)}
-              </div>
-            </div>
-            
-            <div class="meal-detail-rating" data-meal-id="${meal.idMeal}" data-user-rating="${userRating}">
-              <p>Your Rating:</p>
-              <div class="stars">
-                <i class="ri-poker-hearts-${userRating >= 1 ? "fill" : "line"}" data-rating="1"></i>
-                <i class="ri-poker-hearts-${userRating >= 2 ? "fill" : "line"}" data-rating="2"></i>
-                <i class="ri-poker-hearts-${userRating >= 3 ? "fill" : "line"}" data-rating="3"></i>
-                <i class="ri-poker-hearts-${userRating >= 4 ? "fill" : "line"}" data-rating="4"></i>
-                <i class="ri-poker-hearts-${userRating >= 5 ? "fill" : "line"}" data-rating="5"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="meal-detail-tabs">
-        <button id="cuisine-recipe-tab" class="${activeTab === "recipe" ? "active" : ""}">Recipe</button>
-        <button id="cuisine-ingredients-tab" class="${activeTab === "ingredients" ? "active" : ""}">Ingredients</button>
-      </div>
-      
-      <div class="meal-detail-content">
-        <div id="cuisine-recipe-content" style="display: ${activeTab === "recipe" ? "block" : "none"}">
-          <h3>Instructions</h3>
-          <div class="instructions">
-            ${meal.strInstructions.replace(/\n/g, "<br>")}
-          </div>
-        </div>
-        
-        <div id="cuisine-ingredients-content" style="display: ${activeTab === "ingredients" ? "block" : "none"}">
-          <h3>Ingredients</h3>
-          <div class="ingredients-grid">
-            ${ingredients
-              .map(
-                (ing) => `
-              <div class="ingredient-item">
-                <img src="https://www.themealdb.com/images/ingredients/${ing.name}-Small.png" alt="${ing.name}">
-                <div>
-                  <p>${ing.name}</p>
-                  <small>${ing.measure}</small>
-                </div>
-              </div>
-            `,
-              )
-              .join("")}
-          </div>
-        </div>
-      </div>
-    `
-
-    // Set up tab switching
-    const recipeTab = document.getElementById("cuisine-recipe-tab")
-    const ingredientsTab = document.getElementById("cuisine-ingredients-tab")
-    const recipeContent = document.getElementById("cuisine-recipe-content")
-    const ingredientsContent = document.getElementById("cuisine-ingredients-content")
-
-    recipeTab.addEventListener("click", () => {
-      recipeTab.classList.add("active")
-      ingredientsTab.classList.remove("active")
-      recipeContent.style.display = "block"
-      ingredientsContent.style.display = "none"
-    })
-
-    ingredientsTab.addEventListener("click", () => {
-      ingredientsTab.classList.add("active")
-      recipeTab.classList.remove("active")
-      ingredientsContent.style.display = "block"
-      recipeContent.style.display = "none"
-    })
-
-    // Set up rating functionality in modal
-    const ratingStars = modalContent.querySelectorAll(".meal-detail-rating .stars i")
-    ratingStars.forEach((star) => {
-      star.addEventListener("click", async (e) => {
-        const loggedInUser = getCurrentUser()
-        if (!loggedInUser) {
-          alert("Please log in to rate meals")
-          return
-        }
-
-        const rating = Number.parseInt(e.target.dataset.rating)
-        await addRating(loggedInUser.uid, meal.idMeal, rating)
-
-        // Update stars in modal
-        ratingStars.forEach((s, index) => {
-          if (index < rating) {
-            s.classList.add("ri-poker-hearts-fill")
-            s.classList.remove("ri-poker-hearts-line")
-          } else {
-            s.classList.add("ri-poker-hearts-line")
-            s.classList.remove("ri-poker-hearts-fill")
-          }
-        })
-
-        // Update user rating data attribute
-        modalContent.querySelector(".meal-detail-rating").dataset.userRating = rating
-
-        // Update average rating
-        const newAvgRating = await getAverageRating(meal.idMeal)
-        updateAverageRatingDisplay(meal.idMeal, newAvgRating)
-      })
-    })
-
-    // Set up watch video button
-    const watchVideoBtn = document.getElementById("cuisine-watch-video")
-    if (watchVideoBtn) {
-      if (meal.strYoutube) {
-        watchVideoBtn.addEventListener("click", () => {
-          window.open(meal.strYoutube, "_blank")
-        })
-        watchVideoBtn.style.display = "block"
-      } else {
-        watchVideoBtn.style.display = "none"
-      }
-    }
-
-    // Set up add to favorites button
-    const addToFavoritesBtn = document.getElementById("cuisine-add-to-favorites")
-    if (addToFavoritesBtn) {
-      addToFavoritesBtn.dataset.id = meal.idMeal
-
-      // Update button text and icon based on favorite status
-      if (isFavorite) {
-        addToFavoritesBtn.innerHTML = '<i class="ri-heart-fill"></i> Remove from Favorites'
-      } else {
-        addToFavoritesBtn.innerHTML = '<i class="ri-heart-line"></i> Add to Favorites'
-      }
-
-      addToFavoritesBtn.addEventListener("click", async () => {
-        const loggedInUser = getCurrentUser()
-        if (!loggedInUser) {
-          alert("Please log in to manage favorites")
-          return
-        }
-
-        if (isFavorite) {
-          // Remove from favorites
-          const result = await removeFavorite(loggedInUser.uid, meal.idMeal)
-          if (result.success) {
-            isFavorite = false
-            addToFavoritesBtn.innerHTML = '<i class="ri-heart-line"></i> Add to Favorites'
-            alert(result.message)
-          } else {
-            alert(result.error || "Error removing from favorites")
-          }
-        } else {
-          // Add to favorites
-          const result = await addFavorite(loggedInUser.uid, meal.idMeal)
-          if (result.success) {
-            isFavorite = true
-            addToFavoritesBtn.innerHTML = '<i class="ri-heart-fill"></i> Remove from Favorites'
-            alert(result.message)
-          } else {
-            alert(result.error || "Error adding to favorites")
-          }
-        }
-      })
-    }
-  } catch (error) {
-    console.error("Error showing meal details:", error)
-    modalContent.innerHTML = "<p>Error loading meal details. Please try again.</p>"
-  }
 }
 
 // Load categories for filter dropdown
