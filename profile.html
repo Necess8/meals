@@ -1,4 +1,3 @@
-<?php include 'check-session.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +7,124 @@
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
   <link rel="stylesheet" href="style.css"/>
+  <style>
+    body {
+      background-color: #f8f3e0;
+    }
+    
+    .profile-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .profile-header {
+      background-color: #a97676;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      color: white;
+      margin-bottom: 20px;
+    }
+    
+    .profile-avatar {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    
+    .profile-info h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+    
+    .profile-info p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    
+    .profile-section {
+      margin-bottom: 30px;
+    }
+    
+    .profile-section h2 {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #333;
+    }
+    
+    .meals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .meal-card {
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .meal-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    
+    .meal-card-content {
+      padding: 15px;
+    }
+    
+    .meal-card-content h3 {
+      margin: 0 0 5px 0;
+      font-size: 18px;
+    }
+    
+    .meal-card-content p {
+      margin: 0 0 10px 0;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .meal-card-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .meal-card-actions button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: #6b1b20;
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .meal-card-actions button:hover {
+      background-color: #8a2a2f;
+    }
+    
+    .tab-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .tab-button {
+      padding: 8px 16px;
+      background-color: #6b1b20;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .tab-button.active {
+      background-color: #8a2a2f;
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -29,39 +146,49 @@
         <button id="searchBtn"><i class="ri-search-line"></i></button>
       </div>
       <span class="username-display" id="usernameDisplay"></span>
-      <a href="logout.php" class="si-btn">Sign Out</a>
+      <a href="#" id="signOutBtn" class="si-btn">Sign Out</a>
       <a href="#" class="menuBtn"><i class="ri-menu-line"></i></a>
     </div>
   </nav>
 
-  <!-- Favorite Meals Section -->
-  <section id="favorite-meals-section">
-    <div class="container">
-      <h2>My Favorite Meals <i class="ri-heart-fill"></i></h2>
-      <div id="favorite-meals" class="meals-grid">
-        <!-- Favorite meals will be dynamically inserted here -->
-        <div class="meal-card skeleton-loader"></div>
-        <div class="meal-card skeleton-loader"></div>
-        <div class="meal-card skeleton-loader"></div>
+  <!-- Profile Section -->
+  <section id="profile-section">
+    <div class="profile-container">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <i class="ri-user-fill"></i>
+        </div>
+        <div class="profile-info">
+          <h1 id="profile-username">User</h1>
+          <p id="profile-email">tester@mealfinder.example</p>
+          <p id="profile-joined">Joined: Recently</p>
+        </div>
       </div>
-      <div id="no-favorites" style="display: none;">
-        <p>You haven't added any favorite meals yet. Browse meals and click the heart icon to add them to your favorites.</p>
-      </div>
-    </div>
-  </section>
 
-  <!-- Rated Meals Section -->
-  <section id="rated-meals-section">
-    <div class="container">
-      <h2>My Rated Meals <i class="ri-poker-hearts-fill"></i></h2>
-      <div id="rated-meals" class="meals-grid">
-        <!-- Rated meals will be dynamically inserted here -->
-        <div class="meal-card skeleton-loader"></div>
-        <div class="meal-card skeleton-loader"></div>
-        <div class="meal-card skeleton-loader"></div>
+      <div class="profile-section">
+        <h2>My Favorite Meals</h2>
+        <div id="favorites-container" class="meals-grid">
+          <!-- Favorites will be loaded here -->
+          <div class="meal-card skeleton-loader"></div>
+          <div class="meal-card skeleton-loader"></div>
+        </div>
+        <div id="no-favorites" style="display: none;">
+          <p>You haven't added any favorites yet. Explore meals and click the heart icon to add them to your favorites!</p>
+          <a href="userpage.html" class="btn">Explore Meals</a>
+        </div>
       </div>
-      <div id="no-ratings" style="display: none;">
-        <p>You haven't rated any meals yet. Browse meals and click the hearts to rate them.</p>
+
+      <div class="profile-section">
+        <h2>My Rated Meals</h2>
+        <div id="ratings-container" class="meals-grid">
+          <!-- Rated meals will be loaded here -->
+          <div class="meal-card skeleton-loader"></div>
+          <div class="meal-card skeleton-loader"></div>
+        </div>
+        <div id="no-ratings" style="display: none;">
+          <p>You haven't rated any meals yet. Rate meals to keep track of what you enjoyed!</p>
+          <a href="userpage.html" class="btn">Explore Meals</a>
+        </div>
       </div>
     </div>
   </section>
@@ -72,15 +199,24 @@
       <span class="close-profile-modal">&times;</span>
       <div id="profileMealDetailContent">
         <!-- Meal details will be dynamically inserted here -->
+        <div class="meal-detail-skeleton">
+          <div class="meal-image skeleton-loader"></div>
+          <div class="meal-title skeleton-loader"></div>
+          <div class="meal-category skeleton-loader"></div>
+          <div class="meal-ingredients skeleton-loader"></div>
+          <div class="meal-instructions skeleton-loader"></div>
+        </div>
       </div>
       <div class="modal-actions">
-        <button id="profile-remove-favorite" class="btn"><i class="ri-heart-fill"></i> Remove from Favorites</button>
+        <button id="profile-add-to-favorites" class="btn"><i class="ri-heart-line"></i> Add to Favorites</button>
         <button id="profile-watch-video" class="btn"><i class="ri-youtube-line"></i> Watch Video</button>
       </div>
     </div>
   </div>
 
-  <script src="profile.js"></script>
+  <script src="firebase-config.js" type="module"></script>
+  <script src="profile.js" type="module"></script>
+
   <footer>
     <p>All Rights Reserved. | April 2025</p>
   </footer>

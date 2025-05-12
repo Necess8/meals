@@ -1,4 +1,4 @@
-// auth.js - Updated to fix login functionality while using existing firebase-config.js
+// auth.js - Updated to fix login functionality and prevent duplicate usernames
 import { auth, db } from "./firebase-config.js"
 import {
   signInWithEmailAndPassword,
@@ -6,11 +6,42 @@ import {
   onAuthStateChanged,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
-import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+import { 
+  doc, 
+  setDoc, 
+  getDoc, 
+  collection, 
+  query, 
+  where, 
+  getDocs,
+  serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+
+// Check if username already exists
+async function usernameExists(username) {
+  try {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("username", "==", username));
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  } catch (error) {
+    console.error("Error checking username:", error);
+    return false;
+  }
+}
 
 // User registration with Firestore integration
 export async function registerUser(username, password) {
   try {
+    // Check if username already exists
+    const exists = await usernameExists(username);
+    if (exists) {
+      return {
+        success: false,
+        error: "Username already exists. Please choose a different username."
+      };
+    }
+
     // Create a pseudo email from username (Firebase requires email format)
     const email = `${username}@mealfinder.example`
 

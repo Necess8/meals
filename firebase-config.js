@@ -1,4 +1,4 @@
-// firebase-config.js
+// firebase-config.js - DO NOT CHANGE THIS FILE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -17,6 +17,6 @@ console.log("Firebase App:", app);  // Should log Firebase app instance
 const auth = getAuth(app);
 console.log("Firebase Auth:", auth); // Should log auth instance
 const db = getFirestore(app);
-console.log("Firestore DB:", db); // Should log Firestore instanc
+console.log("Firestore DB:", db); // Should log Firestore instance
 
-export { auth, db };
+export { auth, db }; 

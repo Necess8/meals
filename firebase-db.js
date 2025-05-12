@@ -61,12 +61,20 @@ export async function getUserData(userId) {
 // Add favorite to Firestore
 export async function addFavorite(userId, mealId) {
   try {
-    await setDoc(doc(db, "favorites", `${userId}_${mealId}`), {
+    // Check if already favorited
+    const favoriteRef = doc(db, "favorites", `${userId}_${mealId}`);
+    const favoriteDoc = await getDoc(favoriteRef);
+    
+    if (favoriteDoc.exists()) {
+      return { success: false, error: "Meal is already in your favorites" };
+    }
+    
+    await setDoc(favoriteRef, {
       userId: userId,
       mealId: mealId,
       timestamp: serverTimestamp(),
     })
-    return { success: true }
+    return { success: true, message: "Meal added to favorites!" }
   } catch (error) {
     console.error("Error adding favorite:", error)
     return { success: false, error: error.message }
@@ -77,7 +85,7 @@ export async function addFavorite(userId, mealId) {
 export async function removeFavorite(userId, mealId) {
   try {
     await deleteDoc(doc(db, "favorites", `${userId}_${mealId}`))
-    return { success: true }
+    return { success: true, message: "Meal removed from favorites" }
   } catch (error) {
     console.error("Error removing favorite:", error)
     return { success: false, error: error.message }
@@ -99,6 +107,18 @@ export async function getUserFavorites(userId) {
   } catch (error) {
     console.error("Error getting favorites:", error)
     return []
+  }
+}
+
+// Check if meal is favorited by user
+export async function isMealFavorited(userId, mealId) {
+  try {
+    const favoriteRef = doc(db, "favorites", `${userId}_${mealId}`);
+    const favoriteDoc = await getDoc(favoriteRef);
+    return favoriteDoc.exists();
+  } catch (error) {
+    console.error("Error checking if meal is favorited:", error);
+    return false;
   }
 }
 
