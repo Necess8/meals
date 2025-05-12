@@ -25,31 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "index.html"
     }
   })
-
-  // Toggle mobile nav
-  const menuBtn = document.querySelector(".menuBtn")
-  const navlink = document.querySelector(".nav-link")
-
-  if (menuBtn && navlink) {
-    menuBtn.addEventListener("click", () => {
-      navlink.classList.toggle("mobile-menu")
-    })
-  }
-
-  // Toggle sign in/register view
-  const container = document.querySelector(".container")
-  const registerBtn = document.querySelector(".registerr-btn")
-  const loginBtn = document.querySelector(".loginn-btn")
-
-  if (registerBtn && loginBtn && container) {
-    registerBtn.addEventListener("click", () => {
-      container.classList.add("active")
-    })
-
-    loginBtn.addEventListener("click", () => {
-      container.classList.remove("active")
-    })
-  }
+  
 
   // Header slider
   const listInfo = document.querySelector(".list-info")
