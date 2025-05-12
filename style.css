@@ -486,17 +486,26 @@ header {
   margin-top: 10px;
   color: #602238;
   text-align: center;
+  min-height: 60px;
 }
 .name-category .name {
-  max-height: 20px;
-  font-size: 19px;
+  max-height: 40px;
+  font-size: 18px;
   font-weight: 600;
   margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  width: 100%;
+  text-align: center;
 }
 .name-category .category {
   position: relative;
   font-size: 15px;
   font-weight: 500;
+  margin-top: 5px;
 }
 .card .rating {
   display: flex;
@@ -570,12 +579,13 @@ header {
   margin-bottom: 40px;
 }
 .meal-card {
-  background: #f8f4f6;
+  background: #fff;
   border: 2px solid #602238;
   border-radius: 15px;
   overflow: hidden;
   transition: transform 0.3s ease;
   cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 .meal-card:hover {
   transform: translateY(-10px);
@@ -587,11 +597,15 @@ header {
 }
 .meal-card-content {
   padding: 15px;
+  background-color: #fff;
 }
 .meal-card-content h3 {
   color: #602238;
   margin-bottom: 5px;
   font-size: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .meal-card-content p {
   color: #a26d75;
@@ -615,17 +629,19 @@ header {
 .meal-card-actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 15px;
+  gap: 5px;
 }
 .meal-card-actions button {
   background: #602238;
   border: none;
   color: #f4d864;
-  padding: 8px 15px;
+  padding: 8px 12px;
   border-radius: 15px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  white-space: nowrap;
 }
 .meal-card-actions button:hover {
   background: #f4d864;
@@ -640,6 +656,7 @@ header {
   align-items: center;
   justify-content: center;
   padding: 0;
+  min-width: 36px;
 }
 .pagination-container {
   display: flex;
@@ -1144,15 +1161,15 @@ footer {
     height: 150px;
   }
   .card .button {
-    flex-direction: column;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
   }
   .card .button button {
-    width: 100%;
+    padding: 8px 12px;
+    font-size: 12px;
   }
 }
-
-/* Add these styles to style.css */
 
 /* Rating container for both average and user ratings */
 .rating-container {
@@ -1244,4 +1261,51 @@ footer {
   margin-bottom: 15px;
   font-size: 14px;
   display: none;
+}
+
+/* Make featured meals responsive */
+@media only screen and (max-width: 768px) {
+  .swiper-slide {
+    width: 280px;
+  }
+
+  .card .image {
+    width: 150px;
+    height: 150px;
+  }
+
+  .name-category .name {
+    font-size: 16px;
+  }
+
+  .card .button {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .card .button button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  .swiper-slide {
+    width: 240px;
+  }
+
+  .card .image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .name-category .name {
+    font-size: 14px;
+  }
+
+  .card .button button {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
 }

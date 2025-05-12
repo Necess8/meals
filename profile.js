@@ -240,13 +240,10 @@ async function createProfileMealCard(meal, isRated = false) {
   }
 
   // Check if meal is favorited (should be true for favorites tab)
-  let isFavorite = true
-  if (!isRated) {
-    // For ratings tab, we need to check if it's also a favorite
-    const loggedInUser = getCurrentUser()
-    if (loggedInUser) {
-      isFavorite = await isMealFavorited(loggedInUser.uid, meal.idMeal)
-    }
+  let isFavorite = false
+  const loggedInUser = getCurrentUser()
+  if (loggedInUser) {
+    isFavorite = await isMealFavorited(loggedInUser.uid, meal.idMeal)
   }
 
   card.innerHTML = `
@@ -305,12 +302,15 @@ async function createProfileMealCard(meal, isRated = false) {
 
         // If we're in the favorites section, remove this card
         if (!isRated) {
-          card.remove()
-
-          // Check if there are any favorites left
+          // Check if we're in the favorites container before removing
           const favoritesContainer = document.getElementById("favorites-container")
-          if (favoritesContainer && favoritesContainer.children.length === 0) {
-            document.getElementById("no-favorites").style.display = "block"
+          if (favoritesContainer && favoritesContainer.contains(card)) {
+            card.remove()
+
+            // Check if there are any favorites left
+            if (favoritesContainer && favoritesContainer.children.length === 0) {
+              document.getElementById("no-favorites").style.display = "block"
+            }
           }
         }
 

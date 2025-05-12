@@ -322,31 +322,28 @@ async function loadTopRatedMeals() {
 }
 
 async function createFeaturedMealCard(meal) {
-  const card = document.createElement("div")
-  card.className = "swiper-slide card"
-  card.dataset.id = meal.idMeal
+  const card = document.createElement("div");
+  card.className = "swiper-slide card";
+  card.dataset.id = meal.idMeal;
 
-  // Get the average rating
-  const avgRating = meal.avgRating || 0
+  const avgRating = meal.avgRating || 0;
 
-  // Check if meal is favorited by current user
-  let isFavorite = false
-  const currentUser = getCurrentUser()
+  let isFavorite = false;
+  const currentUser = getCurrentUser();
   if (currentUser) {
-    isFavorite = await isMealFavorited(currentUser.uid, meal.idMeal)
+    isFavorite = await isMealFavorited(currentUser.uid, meal.idMeal);
   }
 
-  // First create with empty rating
   card.innerHTML = `
     <div class="card-content">
       <div class="image">
         <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
       </div>
       <div class="name-category">
-        <span class="name">${meal.strMeal}</span>
+        <span class="name" title="${meal.strMeal}">${meal.strMeal}</span>
         <span class="category">${meal.strCategory}</span>
       </div>
-      
+
       <div class="rating-container">
         <div class="avg-rating" title="Average rating: ${avgRating}">
           <span class="avg-rating-label">Avg: ${avgRating}</span>
@@ -354,7 +351,7 @@ async function createFeaturedMealCard(meal) {
             ${generateRatingStars(avgRating)}
           </div>
         </div>
-        
+
         <div class="rating" data-meal-id="${meal.idMeal}">
           <span class="your-rating-label">Your rating:</span>
           <i class="ri-poker-hearts-line" data-rating="1"></i>
@@ -364,7 +361,7 @@ async function createFeaturedMealCard(meal) {
           <i class="ri-poker-hearts-line" data-rating="5"></i>
         </div>
       </div>
-      
+
       <div class="button">
         <button class="recipe" data-id="${meal.idMeal}">See Recipe</button>
         <button class="ingredient" data-id="${meal.idMeal}">Ingredients</button>
@@ -373,101 +370,97 @@ async function createFeaturedMealCard(meal) {
         </button>
       </div>
     </div>
-  `
+  `;
 
-  // Add event listeners
-  const recipeBtn = card.querySelector(".recipe")
-  const ingredientBtn = card.querySelector(".ingredient")
-  const favoriteBtn = card.querySelector(".favorite")
-  const ratingStars = card.querySelectorAll(".rating i")
+  // Event listeners
+  const recipeBtn = card.querySelector(".recipe");
+  const ingredientBtn = card.querySelector(".ingredient");
+  const favoriteBtn = card.querySelector(".favorite");
+  const ratingStars = card.querySelectorAll(".rating i");
 
-  recipeBtn.addEventListener("click", () => showMealDetail(meal.idMeal))
-  ingredientBtn.addEventListener("click", () => showMealDetail(meal.idMeal, "ingredients"))
+  recipeBtn.addEventListener("click", () => showMealDetail(meal.idMeal));
+  ingredientBtn.addEventListener("click", () => showMealDetail(meal.idMeal, "ingredients"));
+
   favoriteBtn.addEventListener("click", async () => {
-    const loggedInUser = getCurrentUser()
+    const loggedInUser = getCurrentUser();
     if (!loggedInUser) {
-      alert("Please log in to add favorites")
-      return
+      alert("Please log in to add favorites");
+      return;
     }
 
-    const icon = favoriteBtn.querySelector("i")
-    const isFilled = icon.classList.contains("ri-heart-fill")
+    const icon = favoriteBtn.querySelector("i");
+    const isFilled = icon.classList.contains("ri-heart-fill");
 
     if (isFilled) {
-      // Remove from favorites
-      const result = await removeFavorite(loggedInUser.uid, meal.idMeal)
+      const result = await removeFavorite(loggedInUser.uid, meal.idMeal);
       if (result.success) {
-        icon.classList.remove("ri-heart-fill")
-        icon.classList.add("ri-heart-line")
-        alert(result.message)
+        icon.classList.remove("ri-heart-fill");
+        icon.classList.add("ri-heart-line");
+        alert(result.message);
       } else {
-        alert(result.error || "Error removing from favorites")
+        alert(result.error || "Error removing from favorites");
       }
     } else {
-      // Add to favorites
-      const result = await addFavorite(loggedInUser.uid, meal.idMeal)
+      const result = await addFavorite(loggedInUser.uid, meal.idMeal);
       if (result.success) {
-        icon.classList.remove("ri-heart-line")
-        icon.classList.add("ri-heart-fill")
-        alert(result.message)
+        icon.classList.remove("ri-heart-line");
+        icon.classList.add("ri-heart-fill");
+        alert(result.message);
       } else {
-        alert(result.error || "Error adding to favorites")
+        alert(result.error || "Error adding to favorites");
       }
     }
-  })
+  });
 
-  // Set up rating functionality
+  // Rating interactions
   ratingStars.forEach((star) => {
     star.addEventListener("click", async (e) => {
-      const loggedInUser = getCurrentUser()
+      const loggedInUser = getCurrentUser();
       if (!loggedInUser) {
-        alert("Please log in to rate meals")
-        return
+        alert("Please log in to rate meals");
+        return;
       }
 
-      const rating = Number.parseInt(e.target.dataset.rating)
-      await addRating(loggedInUser.uid, meal.idMeal, rating)
-      updateStarDisplay(card, rating)
+      const rating = Number.parseInt(e.target.dataset.rating);
+      await addRating(loggedInUser.uid, meal.idMeal, rating);
+      updateStarDisplay(card, rating);
 
-      // Update average rating
-      const newAvgRating = await getAverageRating(meal.idMeal)
-      updateAverageRatingDisplay(meal.idMeal, newAvgRating)
-    })
+      const newAvgRating = await getAverageRating(meal.idMeal);
+      updateAverageRatingDisplay(meal.idMeal, newAvgRating);
+    });
 
-    // Hover effect
     star.addEventListener("mouseover", (e) => {
-      const rating = Number.parseInt(e.target.dataset.rating)
-      const stars = card.querySelectorAll(".rating i")
-
-      stars.forEach((s, index) => {
+      const rating = Number.parseInt(e.target.dataset.rating);
+      ratingStars.forEach((s, index) => {
         if (index < rating) {
-          s.classList.add("ri-poker-hearts-fill")
-          s.classList.remove("ri-poker-hearts-line")
+          s.classList.add("ri-poker-hearts-fill");
+          s.classList.remove("ri-poker-hearts-line");
         } else {
-          s.classList.add("ri-poker-hearts-line")
-          s.classList.remove("ri-poker-hearts-fill")
+          s.classList.add("ri-poker-hearts-line");
+          s.classList.remove("ri-poker-hearts-fill");
         }
-      })
-    })
+      });
+    });
 
-    // Reset on mouseout if not rated
     star.addEventListener("mouseout", () => {
-      const currentRating = Number.parseInt(card.querySelector(".rating").dataset.userRating || "0")
-      updateStarDisplay(card, currentRating)
-    })
-  })
+      const currentRating = Number.parseInt(card.querySelector(".rating").dataset.userRating || "0");
+      updateStarDisplay(card, currentRating);
+    });
+  });
 
-  // Get and display user's rating
+  // Fetch and display user's rating
   if (currentUser) {
-    const rating = await getUserRating(currentUser.uid, meal.idMeal)
+    const rating = await getUserRating(currentUser.uid, meal.idMeal);
     if (rating > 0) {
-      card.querySelector(".rating").dataset.userRating = rating
-      updateStarDisplay(card, rating)
+      card.querySelector(".rating").dataset.userRating = rating;
+      updateStarDisplay(card, rating);
     }
   }
 
-  return card
+  return card;
 }
+
+
 
 function updateStarDisplay(container, rating) {
   const stars = container.querySelectorAll(".rating i, .meal-rating i")
