@@ -179,6 +179,7 @@ ul {
   text-decoration: none;
 }
 /* start of header */
+/* start of header */
 header {
   width: 100vw;
   height: 100vh;
@@ -258,9 +259,13 @@ header {
 
 .item img {
   position: relative;
-  max-width: 100%;
+  width: 300px;     /* Fixed pixel size prevents zoom scaling */
   height: auto;
+  max-width: none;  /* Overrides any inherited max-width */
+  pointer-events: none; /* Optional: ignore mouse interactions */
+  user-select: none;    /* Optional: prevent text selection */
 }
+
 
 .navigation {
   position: absolute;
@@ -288,6 +293,7 @@ header {
   background: #602238;
   color: #f4d864;
 }
+
 
 /* sign out button */
 .navbar .si-btn {
@@ -827,7 +833,7 @@ header {
 .cuisines-header p,
 .profile-header p {
   font-size: 18px;
-  max-width: 600px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 #cuisines-grid-section {
@@ -898,6 +904,7 @@ header {
   padding: 40px 0;
   background: #fff4d1;
 }
+
 /* About Page */
 .about-content {
   padding: 100px 0 50px;
@@ -1080,7 +1087,12 @@ footer {
   .nav-link li {
     margin: 30px auto;
   }
+  .header-content .list-img {
+    margin-top: 60px;
+    margin-left: 60px;
+  }
   .header-content {
+    display: column;
     justify-content: center;
     margin-left: 30px;
   }
@@ -1088,6 +1100,11 @@ footer {
     width: 90%;
     transform: none;
     left: 5%;
+    z-index: 100;
+  }
+  .header-content .info {
+    width: 450px;
+    justify-content: left;
   }
   .searchBar {
     margin: 20px 0 75px;
@@ -1127,6 +1144,30 @@ footer {
   .modal-actions button {
     width: 100%;
     justify-content: center;
+  }
+  .info {
+    margin-top: 1px;
+  }
+  .header-content .list-img {
+    margin-top: 100px;
+    justify-content: center;
+  }
+  .header-content {
+    display: column;
+    justify-content: center;
+    margin-top: 15px;
+    margin-left: 30px;
+  }
+  .header-content .box-info {
+    width: 90%;
+    transform: none;
+    left: 5%;
+    margin-top: 0px;
+    z-index: 100;
+  }
+  .header-content .info {
+    width: 450px;
+    justify-content: left;
   }
   .searchBar input {
     width: 150px;
